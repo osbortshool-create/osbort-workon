@@ -1,0 +1,826 @@
+<%- include('../../partials/header') %>
+
+<div class="student-portal">
+    <div class="portal-header">
+        <div class="student-info">
+            <div class="student-details">
+                <h1><i class="fas fa-brain"></i> Smart Revision - Practice Zone</h1>
+                <p class="student-class">Class: <%= studentClass %></p>
+            </div>
+        </div>
+        <div class="practice-stats">
+            <div class="stat-item">
+                <span class="stat-value" id="totalQuestions">0</span>
+                <span class="stat-label">Questions</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="correctAnswers">0</span>
+                <span class="stat-label">Correct</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="accuracy">0%</span>
+                <span class="stat-label">Accuracy</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="practice-content">
+        <% if (Object.keys(questionsBySubject).length > 0) { %>
+            <div class="subjects-grid">
+                <% Object.keys(questionsBySubject).forEach(subject => { %>
+                    <div class="subject-card" data-subject="<%= subject %>">
+                        <div class="subject-header">
+                            <div class="subject-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="subject-info">
+                                <h3><%= subject %></h3>
+                                <p><%= questionsBySubject[subject].length %> questions available</p>
+                            </div>
+                        </div>
+                        <button class="start-practice-btn" onclick="startPractice('<%= subject %>')">
+                            <i class="fas fa-play"></i> Start Practice
+                        </button>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="no-questions">
+                <div class="no-questions-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3>No Practice Questions Available</h3>
+                <p>Practice questions for your class haven't been uploaded yet.</p>
+                <p>Check back later or contact your teacher.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Practice Modal -->
+<div id="practiceModal" class="practice-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalSubject">Subject Practice</h3>
+            <div class="modal-controls">
+                <span id="questionCounter">Question 1 of 10</span>
+                <button type="button" class="close-modal" onclick="closePracticeModal()">&times;</button>
+            </div>
+        </div>
+        
+        <div class="modal-body">
+            <div class="question-container">
+                <div class="question-text" id="currentQuestion">
+                    Loading question...
+                </div>
+                
+                <div class="options-container" id="optionsContainer">
+                    <!-- Options will be populated by JavaScript -->
+                </div>
+                
+                <div class="feedback-container" id="feedbackContainer" style="display: none;">
+                    <!-- Feedback will be shown here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closePracticeModal()">
+                <i class="fas fa-times"></i> Exit Practice
+            </button>
+            <button type="button" class="btn btn-primary" id="nextQuestionBtn" onclick="nextQuestion()" style="display: none;">
+                <i class="fas fa-arrow-right"></i> Next Question
+            </button>
+            <button type="button" class="btn btn-success" id="finishPracticeBtn" onclick="finishPractice()" style="display: none;">
+                <i class="fas fa-flag-checkered"></i> Finish Practice
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div id="resultsModal" class="practice-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Practice Results</h3>
+            <button type="button" class="close-modal" onclick="closeResultsModal()">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="results-summary">
+                <div class="result-circle">
+                    <div class="circle-progress" id="progressCircle">
+                        <span id="finalScore">0%</span>
+                    </div>
+                </div>
+                
+                <div class="results-stats">
+                    <div class="result-stat">
+                        <span class="stat-number" id="finalCorrect">0</span>
+                        <span class="stat-text">Correct</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-number" id="finalIncorrect">0</span>
+                        <span class="stat-text">Incorrect</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-number" id="finalTotal">0</span>
+                        <span class="stat-text">Total</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="performance-message" id="performanceMessage">
+                <!-- Performance message will be shown here -->
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeResultsModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+            <button type="button" class="btn btn-primary" onclick="restartPractice()">
+                <i class="fas fa-redo"></i> Practice Again
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.practice-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    min-width: 80px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1e293b;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.subject-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.subject-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.subject-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.subject-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.subject-info h3 {
+    color: #1e293b;
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.subject-info p {
+    color: #64748b;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.start-practice-btn {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.start-practice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.practice-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.modal-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #64748b;
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.question-container {
+    min-height: 300px;
+}
+
+.question-text {
+    font-size: 1.2rem;
+    color: #1e293b;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.option-button {
+    padding: 1rem 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.option-button:hover {
+    border-color: #1e293b;
+    background: #f8fafc;
+}
+
+.option-button.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.option-button.correct {
+    border-color: #10b981;
+    background: #f0fdf4;
+    color: #065f46;
+}
+
+.option-button.incorrect {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.option-button.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.option-letter {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #1e293b;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.option-button.correct .option-letter {
+    background: #10b981;
+}
+
+.option-button.incorrect .option-letter {
+    background: #ef4444;
+}
+
+.feedback-container {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    animation: fadeIn 0.5s ease;
+}
+
+.feedback-correct {
+    background: #f0fdf4;
+    border: 1px solid #10b981;
+    color: #065f46;
+}
+
+.feedback-incorrect {
+    background: #fef2f2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+}
+
+.feedback-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    background: #f8fafc;
+    border-radius: 0 0 1rem 1rem;
+}
+
+.results-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.result-circle {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.circle-progress {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(#10b981 0deg, #e5e7eb 0deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.circle-progress::before {
+    content: '';
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: white;
+}
+
+.circle-progress span {
+    position: relative;
+    z-index: 1;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1e293b;
+}
+
+.results-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.result-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1e293b;
+}
+
+.stat-text {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.performance-message {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.performance-excellent {
+    background: #f0fdf4;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+.performance-good {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #3b82f6;
+}
+
+.performance-average {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.performance-poor {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
+
+.no-questions {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.no-questions-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
+}
+
+.no-questions h3 {
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.no-questions p {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .portal-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .practice-stats {
+        justify-content: center;
+    }
+    
+    .subjects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .modal-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .results-stats {
+        gap: 1rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+let currentSubject = '';
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let correctAnswers = 0;
+let totalAnswered = 0;
+let practiceStats = {
+    totalQuestions: 0,
+    correct: 0,
+    accuracy: 0
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateStatsDisplay();
+});
+
+function startPractice(subject) {
+    currentSubject = subject;
+    currentQuestionIndex = 0;
+    correctAnswers = 0;
+    totalAnswered = 0;
+    
+    // Fetch questions for the subject
+    fetch(`/api/practice-questions/${encodeURIComponent(subject)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.questions.length > 0) {
+                currentQuestions = shuffleArray(data.questions);
+                document.getElementById('modalSubject').textContent = `${subject} Practice`;
+                document.getElementById('practiceModal').style.display = 'flex';
+                showQuestion();
+            } else {
+                alert('No questions available for this subject.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching questions:', error);
+            alert('Failed to load questions. Please try again.');
+        });
+}
+
+function showQuestion() {
+    const question = currentQuestions[currentQuestionIndex];
+    const questionCounter = document.getElementById('questionCounter');
+    const questionText = document.getElementById('currentQuestion');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const nextBtn = document.getElementById('nextQuestionBtn');
+    const finishBtn = document.getElementById('finishPracticeBtn');
+    
+    // Update question counter
+    questionCounter.textContent = `Question ${currentQuestionIndex + 1} of ${currentQuestions.length}`;
+    
+    // Show question text
+    questionText.textContent = question.question;
+    
+    // Clear previous options and feedback
+    optionsContainer.innerHTML = '';
+    feedbackContainer.style.display = 'none';
+    nextBtn.style.display = 'none';
+    finishBtn.style.display = 'none';
+    
+    // Create option buttons
+    question.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.className = 'option-button';
+        button.innerHTML = `
+            <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+            <span class="option-text">${option.text}</span>
+        `;
+        button.onclick = () => selectAnswer(button, option.isCorrect, option.text);
+        optionsContainer.appendChild(button);
+    });
+}
+
+function selectAnswer(selectedButton, isCorrect, selectedText) {
+    const optionButtons = document.querySelectorAll('.option-button');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const nextBtn = document.getElementById('nextQuestionBtn');
+    const finishBtn = document.getElementById('finishPracticeBtn');
+    
+    // Disable all buttons
+    optionButtons.forEach(btn => {
+        btn.classList.add('disabled');
+        btn.onclick = null;
+    });
+    
+    // Mark selected answer
+    selectedButton.classList.add('selected');
+    
+    // Show correct/incorrect styling
+    optionButtons.forEach(btn => {
+        const optionText = btn.querySelector('.option-text').textContent;
+        const question = currentQuestions[currentQuestionIndex];
+        const option = question.options.find(opt => opt.text === optionText);
+        
+        if (option.isCorrect) {
+            btn.classList.add('correct');
+        } else if (btn === selectedButton && !isCorrect) {
+            btn.classList.add('incorrect');
+        }
+    });
+    
+    // Update stats
+    totalAnswered++;
+    if (isCorrect) {
+        correctAnswers++;
+        practiceStats.correct++;
+    }
+    practiceStats.totalQuestions++;
+    practiceStats.accuracy = Math.round((practiceStats.correct / practiceStats.totalQuestions) * 100);
+    
+    updateStatsDisplay();
+    
+    // Show feedback
+    showFeedback(isCorrect, selectedText);
+    
+    // Show next/finish button
+    if (currentQuestionIndex < currentQuestions.length - 1) {
+        nextBtn.style.display = 'inline-flex';
+    } else {
+        finishBtn.style.display = 'inline-flex';
+    }
+}
+
+function showFeedback(isCorrect, selectedText) {
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const question = currentQuestions[currentQuestionIndex];
+    
+    feedbackContainer.innerHTML = `
+        <div class="feedback-title">
+            <i class="fas fa-${isCorrect ? 'check-circle' : 'times-circle'}"></i>
+            ${isCorrect ? 'Correct!' : 'Incorrect'}
+        </div>
+        ${!isCorrect ? `<p><strong>Your answer:</strong> ${selectedText}</p>` : ''}
+        <p><strong>Correct answer:</strong> ${question.correctAnswer}</p>
+    `;
+    
+    feedbackContainer.className = `feedback-container ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
+    feedbackContainer.style.display = 'block';
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    showQuestion();
+}
+
+function finishPractice() {
+    closePracticeModal();
+    showResults();
+}
+
+function showResults() {
+    const resultsModal = document.getElementById('resultsModal');
+    const finalScore = document.getElementById('finalScore');
+    const finalCorrect = document.getElementById('finalCorrect');
+    const finalIncorrect = document.getElementById('finalIncorrect');
+    const finalTotal = document.getElementById('finalTotal');
+    const progressCircle = document.getElementById('progressCircle');
+    const performanceMessage = document.getElementById('performanceMessage');
+    
+    const percentage = Math.round((correctAnswers / totalAnswered) * 100);
+    const incorrect = totalAnswered - correctAnswers;
+    
+    // Update results
+    finalScore.textContent = `${percentage}%`;
+    finalCorrect.textContent = correctAnswers;
+    finalIncorrect.textContent = incorrect;
+    finalTotal.textContent = totalAnswered;
+    
+    // Update progress circle
+    const degrees = (percentage / 100) * 360;
+    progressCircle.style.background = `conic-gradient(#10b981 ${degrees}deg, #e5e7eb ${degrees}deg)`;
+    
+    // Show performance message
+    let messageClass, messageText;
+    if (percentage >= 90) {
+        messageClass = 'performance-excellent';
+        messageText = '🎉 Excellent work! You have mastered this topic!';
+    } else if (percentage >= 75) {
+        messageClass = 'performance-good';
+        messageText = '👍 Good job! You have a solid understanding.';
+    } else if (percentage >= 60) {
+        messageClass = 'performance-average';
+        messageText = '📚 Not bad! Keep practicing to improve.';
+    } else {
+        messageClass = 'performance-poor';
+        messageText = '💪 Keep studying! Practice makes perfect.';
+    }
+    
+    performanceMessage.className = `performance-message ${messageClass}`;
+    performanceMessage.textContent = messageText;
+    
+    resultsModal.style.display = 'flex';
+}
+
+function closePracticeModal() {
+    document.getElementById('practiceModal').style.display = 'none';
+}
+
+function closeResultsModal() {
+    document.getElementById('resultsModal').style.display = 'none';
+}
+
+function restartPractice() {
+    closeResultsModal();
+    startPractice(currentSubject);
+}
+
+function updateStatsDisplay() {
+    document.getElementById('totalQuestions').textContent = practiceStats.totalQuestions;
+    document.getElementById('correctAnswers').textContent = practiceStats.correct;
+    document.getElementById('accuracy').textContent = `${practiceStats.accuracy}%`;
+}
+
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('practice-modal')) {
+        if (e.target.id === 'practiceModal') {
+            closePracticeModal();
+        } else if (e.target.id === 'resultsModal') {
+            closeResultsModal();
+        }
+    }
+});
+</script>
+
+<%- include('../../partials/footer') %>

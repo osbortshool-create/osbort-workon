@@ -1,0 +1,298 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Manage Students</h1>
+        <a href="/admin/students/add" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Student
+        </a>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="filters">
+        <form method="GET" action="/admin/students" class="filter-form">
+            <div class="filter-group">
+                <input type="text" name="search" placeholder="Search by name or ID" value="<%= locals.query ? query.search || '' : '' %>">
+            </div>
+            <div class="filter-group">
+                <select name="class">
+                    <option value="">All Classes</option>
+                    <% classes.forEach(cls => { %>
+                        <option value="<%= cls.className %>" <%= locals.query && query.class === cls.className ? 'selected' : '' %>>
+                            <%= cls.className %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select name="session">
+                    <option value="">All Sessions</option>
+                    <% sessions.forEach(session => { %>
+                        <option value="<%= session.sessionName %>" <%= locals.query && query.session === session.sessionName ? 'selected' : '' %>>
+                            <%= session.sessionName %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-secondary" style="background-color: #1e293b;">Filter</button>
+            <a href="/admin/students" class="btn btn-outline" style="border: 2px solid#1e293b; color: #1e293b; height: 40px; ">Clear</a>
+        </form>
+    </div>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student Photo</th>
+                    <th>Name</th>
+                    <th>Student ID</th>
+                    <th>Class</th>
+                    <th>Session</th>
+                    <th>Gender</th>
+                    <th>Parent Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (students && students.length > 0) { %>
+                    <% students.forEach(student => { %>
+                        <tr>
+                            <td>
+                                <% const hasPhoto = student.passportURL && String(student.passportURL).trim() && !['/images/default-avatar.png','default-avatar.png','/uploads/default-avatar.png'].includes(String(student.passportURL)); %>
+                                <% const initials = (student.fullName || 'Student').split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase(); %>
+                                <% if (hasPhoto) { %>
+                                    <img src="<%= student.passportURL %>" alt="<%= student.fullName %>" class="student-photo">
+                                <% } else { %>
+                                    <div class="student-avatar-fallback" title="<%= student.fullName %>">
+                                        <span><%= initials %></span>
+                                    </div>
+                                <% } %>
+                            </td>
+                            <td><%= student.fullName %></td>
+                            <td><%= student.studentID %></td>
+                            <td><%= student.currentClass %></td>
+                            <td><%= student.currentSession %></td>
+                            <td><%= student.gender %></td>
+                            <td><%= student.parentPhone %></td>
+                            <td class="actions">
+                                <a href="/admin/students/edit/<%= student._id %>" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning reset-password-btn" data-id="<%= student._id %>" data-student-id="<%= student.studentID %>">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <form method="POST" action="/admin/students/delete/<%= student._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to deactivate this student?')">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center">No students found</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+    
+    <% if (totalPages > 1) { %>
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %><%= locals.query ? '&' + new URLSearchParams(query).toString() : '' %>" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <% } %>
+            
+            <span class="page-info">
+                Page <%= currentPage %> of <%= totalPages %>
+            </span>
+            
+            <% if (currentPage < totalPages) { %>
+                <a href="?page=<%= currentPage + 1 %><%= locals.query ? '&' + new URLSearchParams(query).toString() : '' %>" class="btn btn-outline">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<!-- Password Reset Modal -->
+<div id="passwordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Password Reset</h3>
+            <button type="button" class="close-modal" onclick="hidePasswordModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>New password for student <strong id="modalStudentId"></strong>:</p>
+            <div class="password-display">
+                <input type="text" id="newPasswordDisplay" readonly style="font-family: monospace; font-size: 1.2rem; padding: 1rem; width: 100%; text-align: center; background: #f0f0f0;">
+            </div>
+            <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                <strong>Important:</strong> Please save this password and share it with the student. This password will not be shown again.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="copyPassword()">
+                <i class="fas fa-copy"></i> Copy Password
+            </button>
+            <button type="button" class="btn btn-outline" onclick="hidePasswordModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--medium-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.modal-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--medium-gray);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+
+.password-display {
+    margin: 1rem 0;
+}
+
+.reset-password-btn {
+    transition: all 0.2s;
+}
+
+.reset-password-btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password reset functionality
+    document.querySelectorAll('.reset-password-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const studentId = this.dataset.id;
+            const studentIdDisplay = this.dataset.studentId;
+            
+            if (!confirm(`Are you sure you want to reset the password for student ${studentIdDisplay}?`)) {
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            fetch(`/admin/students/reset-password/${studentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showPasswordModal(data.studentID, data.newPassword);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+                
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-key"></i>';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while resetting the password');
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-key"></i>';
+            });
+        });
+    });
+});
+
+function showPasswordModal(studentId, newPassword) {
+    document.getElementById('modalStudentId').textContent = studentId;
+    document.getElementById('newPasswordDisplay').value = newPassword;
+    document.getElementById('passwordModal').style.display = 'flex';
+}
+
+function hidePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+}
+
+function copyPassword() {
+    const passwordField = document.getElementById('newPasswordDisplay');
+    passwordField.select();
+    passwordField.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        document.execCommand('copy');
+        alert('Password copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy password:', err);
+        alert('Failed to copy password. Please copy it manually.');
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
+</script>
+
+<%- include('../../partials/footer') %>

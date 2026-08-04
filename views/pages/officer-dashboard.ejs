@@ -1,0 +1,94 @@
+<%- include('../partials/header') %>
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Result Officer Dashboard</h1>
+        <div class="session-info">
+            <% if (locals.currentSession) { %>
+                <span class="session-badge">
+                    <%= currentSession.sessionName %> - <%= currentSession.currentTerm %>
+                </span>
+            <% } %>
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.pendingApproval : 0 %></h3>
+                <p>Pending Approval</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.approvedResults : 0 %></h3>
+                <p>Approved Results</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-content">
+        <div class="dashboard-section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <a href="/result/approve" class="action-card">
+                    <i class="fas fa-check-double"></i>
+                    <span>Approve Results</span>
+                </a>
+                <a href="/result/published" class="action-card">
+                    <i class="fas fa-eye"></i>
+                    <span>View Published Results</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2>Results by Class (Pending Approval)</h2>
+            <div class="class-distribution">
+                <% if (locals.stats && stats.resultsByClass) { %>
+                    <% stats.resultsByClass.forEach(classData => { %>
+                        <div class="class-item">
+                            <span class="class-name"><%= classData._id %></span>
+                            <span class="class-count"><%= classData.count %> results</span>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p>No pending results</p>
+                <% } %>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2>Recent Approvals</h2>
+            <div class="recent-activities">
+                <% if (locals.stats && stats.recentApprovals) { %>
+                    <% stats.recentApprovals.forEach(result => { %>
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong><%= result.studentName %></strong> - <%= result.subject %></p>
+                                <small><%= result.className %> | Approved by <%= result.publishedBy %></small>
+                            </div>
+                            <div class="activity-time">
+                                <%= new Date(result.publishedAt).toLocaleDateString() %>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p>No recent approvals</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

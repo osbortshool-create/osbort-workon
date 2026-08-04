@@ -1,0 +1,164 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Published Results</h1>
+        <div class="page-actions">
+            <a href="/result/approve" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">
+                <i class="fas fa-clock"></i> Pending Approval
+            </a>
+        </div>
+    </div>
+    
+    <div class="filters">
+        <form method="GET" action="/result/published" class="filter-form">
+            <div class="filter-group">
+                <label for="class">Class:</label>
+                <select name="class" id="class">
+                    <option value="">All Classes</option>
+                    <% classes.forEach(className => { %>
+                        <option value="<%= className %>" <%= query.class === className ? 'selected' : '' %>>
+                            <%= className %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="subject">Subject:</label>
+                <select name="subject" id="subject">
+                    <option value="">All Subjects</option>
+                    <% subjects.forEach(subject => { %>
+                        <option value="<%= subject %>" <%= query.subject === subject ? 'selected' : '' %>>
+                            <%= subject %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="term">Term:</label>
+                <select name="term" id="term">
+                    <option value="">All Terms</option>
+                    <% terms.forEach(term => { %>
+                        <option value="<%= term %>" <%= query.term === term ? 'selected' : '' %>>
+                            <%= term %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="session">Session:</label>
+                <select name="session" id="session">
+                    <option value="">All Sessions</option>
+                    <% sessions.forEach(session => { %>
+                        <option value="<%= session %>" <%= query.session === session ? 'selected' : '' %>>
+                            <%= session %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary" style="background-color: #1e293b;">Filter</button>
+            <a href="/result/published" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b; height: 40px;">Clear</a>
+        </form>
+    </div>
+    
+    <div class="summary-grid">
+        <% if (publishedClasses && publishedClasses.length > 0) { %>
+            <% publishedClasses.forEach(item => { %>
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <div>
+                            <h3><%= item.className %></h3>
+                            <p><%= item.publishedStudents %> of <%= item.totalStudents %> students have published results</p>
+                        </div>
+                        <span class="summary-percentage"><%= item.percentage %>%</span>
+                    </div>
+                    <div class="summary-progress">
+                        <div class="summary-progress-bar" style="width: <%= item.percentage %>%"></div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="empty-state">No published results found for the selected filters.</div>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.page-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.summary-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.summary-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+}
+
+.summary-card h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.summary-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.summary-percentage {
+    font-weight: 700;
+    color: #1d4ed8;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.summary-progress {
+    width: 100%;
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.summary-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #22c55e);
+    border-radius: 999px;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    padding: 1.5rem;
+    text-align: center;
+    color: #6b7280;
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 12px;
+}
+</style>
+</script>
+
+<%- include('../../partials/footer') %>

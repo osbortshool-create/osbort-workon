@@ -1,0 +1,395 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Passed Out Students</h1>
+        <div class="page-actions">
+            <a href="/admin/promote" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b; display: flex; justify-self:end!important;">
+                <i class="fas fa-level-up-alt"></i> Promote Students
+            </a>
+        </div>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="filters" style="margin-top: 10px;">
+        <form method="GET" action="/admin/passed-out-students" class="filter-form">
+            <div class="filter-group">
+                <label for="search">Search:</label>
+                <input type="text" name="search" id="search" placeholder="Search by name or ID" value="<%= locals.query ? query.search || '' : '' %>">
+            </div>
+            
+            <div class="filter-group">
+                <label for="year">Passed Out Year:</label>
+                <select name="year" id="year">
+                    <option value="">All Years</option>
+                    <% availableYears.forEach(year => { %>
+                        <option value="<%= year %>" <%= locals.query && query.year == year ? 'selected' : '' %>>
+                            <%= year %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="class">Passed Out From Class:</label>
+                <select name="class" id="class">
+                    <option value="">All Classes</option>
+                    <% availableClasses.forEach(className => { %>
+                        <option value="<%= className %>" <%= locals.query && query.class === className ? 'selected' : '' %>>
+                            <%= className %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="session">Session:</label>
+                <select name="session" id="session">
+                    <option value="">All Sessions</option>
+                    <% availableSessions.forEach(session => { %>
+                        <option value="<%= session %>" <%= locals.query && query.session === session ? 'selected' : '' %>>
+                            <%= session %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary" style="background-color: #1e293b;">Filter</button>
+            <a href="/admin/passed-out-students" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b; height: 40px;">Clear</a>
+        </form>
+    </div>
+    
+    <div class="stats-summary">
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= passedOutStudents.length %></h3>
+                <p>Students Found</p>
+            </div>
+        </div>
+        
+        <% if (availableYears.length > 0) { %>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="stat-content">
+                    <h3><%= availableYears[0] %> - <%= availableYears[availableYears.length - 1] %></h3>
+                    <p>Year Range</p>
+                </div>
+            </div>
+        <% } %>
+        
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fas fa-school"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= availableClasses.length %></h3>
+                <p>Classes Represented</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student Photo</th>
+                    <th>Full Name</th>
+                    <th>Student ID</th>
+                    <th>Gender</th>
+                    <th>Passed Out From</th>
+                    <th>Session</th>
+                    <th>Year</th>
+                    <th>Overall Average</th>
+                    <th>Performance</th>
+                    <th>Passed Out Date</th>
+                    <th>Parent Contact</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (passedOutStudents && passedOutStudents.length > 0) { %>
+                    <% passedOutStudents.forEach(student => { %>
+                        <tr>
+                            <td>
+                                <img src="<%= student.passportURL %>" alt="<%= student.fullName %>" class="student-photo">
+                            </td>
+                            <td class="student-name"><%= student.fullName %></td>
+                            <td><%= student.studentID %></td>
+                            <td><%= student.gender %></td>
+                            <td class="class-name"><%= student.passedOutFromClass %></td>
+                            <td><%= student.passedOutFromSession %></td>
+                            <td class="year-badge"><%= student.passedOutYear %></td>
+                            <td class="average-score">
+                                <%= student.overallAverage ? student.overallAverage.toFixed(2) : '0.00' %>%
+                            </td>
+                            <td>
+                                <% 
+                                    let performanceClass = 'poor';
+                                    let performanceText = 'Poor';
+                                    const avg = student.overallAverage || 0;
+                                    if (avg >= 80) { 
+                                        performanceClass = 'excellent'; 
+                                        performanceText = 'Excellent'; 
+                                    } else if (avg >= 70) { 
+                                        performanceClass = 'very-good'; 
+                                        performanceText = 'Very Good'; 
+                                    } else if (avg >= 60) { 
+                                        performanceClass = 'good'; 
+                                        performanceText = 'Good'; 
+                                    } else if (avg >= 50) { 
+                                        performanceClass = 'average'; 
+                                        performanceText = 'Average'; 
+                                    }
+                                %>
+                                <span class="performance-badge <%= performanceClass %>">
+                                    <%= performanceText %>
+                                </span>
+                            </td>
+                            <td><%= new Date(student.passedOutDate).toLocaleDateString() %></td>
+                            <td class="contact-info">
+                                <div class="contact-item">
+                                    <i class="fas fa-phone"></i>
+                                    <span><%= student.parentPhone %></span>
+                                </div>
+                                <% if (student.parentEmail) { %>
+                                    <div class="contact-item">
+                                        <i class="fas fa-envelope"></i>
+                                        <span><%= student.parentEmail %></span>
+                                    </div>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="11" class="text-center">
+                            <div class="no-data">
+                                <div class="no-data-icon">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <h3>No Passed Out Students Found</h3>
+                                <p>No students have passed out yet or match your search criteria.</p>
+                            </div>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+    
+    <% if (totalPages > 1) { %>
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %><%= locals.query ? '&' + new URLSearchParams(query).toString() : '' %>" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <% } %>
+            
+            <span class="page-info">
+                Page <%= currentPage %> of <%= totalPages %>
+            </span>
+            
+            <% if (currentPage < totalPages) { %>
+                <a href="?page=<%= currentPage + 1 %><%= locals.query ? '&' + new URLSearchParams(query).toString() : '' %>" class="btn btn-outline">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<style>
+.page-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-item {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-content h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1e293b;
+    margin: 0;
+}
+
+.stat-content p {
+    color: #64748b;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.class-name {
+    font-weight: 600;
+    color: #3b82f6;
+}
+
+.year-badge {
+    background: #1e293b;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    display: inline-block;
+}
+
+.average-score {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+
+.performance-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.performance-badge.excellent {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.performance-badge.very-good {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.performance-badge.good {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.performance-badge.average {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.performance-badge.poor {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.contact-info {
+    font-size: 0.875rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.contact-item i {
+    color: #64748b;
+    width: 16px;
+}
+
+.no-data {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.no-data-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
+}
+
+.no-data h3 {
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.no-data p {
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .stats-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .contact-info {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-summary {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<%- include('../../partials/footer') %>

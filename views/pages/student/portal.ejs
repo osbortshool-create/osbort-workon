@@ -1,0 +1,826 @@
+<%- include('../../partials/header') %>
+
+<div class="student-portal">
+    <% if (!locals.tokenVerified) { %>
+        <div class="token-gate-backdrop">
+            <div class="token-gate-modal">
+                <div class="token-gate-icon"><i class="fas fa-shield-alt"></i></div>
+                <h2>Result Access Required</h2>
+                <p>Please enter the token provided for this student to unlock the portal.</p>
+                <form id="tokenGateForm" class="token-gate-form">
+                    <input type="text" id="portalToken" name="token" class="token-gate-input" maxlength="20" placeholder="Enter 12-digit token" autocomplete="off" required>
+                    <div id="tokenGateError" class="token-gate-error"></div>
+                    <button type="submit" class="btn btn-primary">Unlock Portal</button>
+                </form>
+            </div>
+        </div>
+    <% } %>
+
+    <div class="portal-body <%= locals.tokenVerified ? '' : 'portal-locked' %>">
+    <div class="portal-header">
+        <div class="student-info">
+            <% const hasPhoto = student.passportURL && String(student.passportURL).trim() && !['/images/default-avatar.png','default-avatar.png','/uploads/default-avatar.png'].includes(String(student.passportURL)); %>
+            <% const initials = (student.fullName || 'Student').split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase(); %>
+            <% if (hasPhoto) { %>
+                <img src="<%= student.passportURL %>" alt="<%= student.fullName %>" class="student-photo-large">
+            <% } else { %>
+                <div class="student-avatar-fallback student-avatar-large" title="<%= student.fullName %>">
+                    <span><%= initials %></span>
+                </div>
+            <% } %>
+            <div class="student-details">
+                <h1><span class="wave">👋</span> Welcome, <%= student.fullName %></h1>
+                <p class="student-id">ID: <%= student.studentID %></p>
+                <p class="student-class"><%= student.currentClass %> | <%= student.currentSession %></p>
+            </div>
+        </div>
+
+        <div class="current-term">
+            <% if (activeSession) { %>
+                <span class="term-badge"><%= activeSession.currentTerm %></span>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Login Announcements Popup -->
+    <% if (locals.loginAnnouncements && loginAnnouncements.length > 0) { %>
+        <div id="announcementPopup" class="announcement-popup">
+            <div class="popup-content">
+                <div class="popup-header">
+                    <h3>Latest Announcements</h3>
+                    <button type="button" class="close-popup" onclick="closeAnnouncementPopup()">&times;</button>
+                </div>
+                <div class="popup-body">
+                    <% loginAnnouncements.forEach(announcement => { %>
+                        <div class="announcement-item">
+                            <h4><%= announcement.title %></h4>
+                            <p><%= announcement.content %></p>
+                            <small class="announcement-date">
+                                <%= new Date(announcement.createdAt).toLocaleDateString() %>
+                            </small>
+                        </div>
+                    <% }) %>
+                </div>
+                <div class="popup-footer">
+                    <button type="button" class="btn btn-primary" onclick="closeAnnouncementPopup()">Close</button>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <div class="portal-stats">
+        <div class="stat-card card-gold">
+            <div class="stat-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.classPosition || '—' %></h3>
+                <p>Class Position</p>
+            </div>
+        </div>
+
+        <div class="stat-card card-blue">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.averageScore %>%</h3>
+                <p>Average Score</p>
+            </div>
+        </div>
+
+        <div class="stat-card card-green">
+            <div class="stat-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= (stats.gradeDistribution.A || 0) + (stats.gradeDistribution.B || 0) %></h3>
+                <p>A's & B's</p>
+            </div>
+        </div>
+
+        <div class="stat-card card-purple">
+            <div class="stat-icon">
+                <i class="fas fa-calculator"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.totalMarks %></h3>
+                <p>Total Marks</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="portal-content">
+        <!-- Announcements Section -->
+        <% if (announcements && announcements.length > 0) { %>
+            <div class="announcements-section">
+                <h2>School Announcements</h2>
+                <div class="announcements-list">
+                    <% announcements.forEach(announcement => { %>
+                        <div class="announcement-card priority-<%= announcement.priority %>">
+                            <div class="announcement-header">
+                                <h3><%= announcement.title %></h3>
+                                <span class="announcement-priority"><%= announcement.priority %></span>
+                            </div>
+                            <p><%= announcement.content %></p>
+                            <small class="announcement-date">
+                                <%= new Date(announcement.createdAt).toLocaleDateString() %>
+                            </small>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+
+        <div class="current-results">
+            <div class="section-header">
+                <h2>Current Term Results</h2>
+                <div class="section-actions">
+                    <a href="/student/results" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">View All Results</a>
+                    <% if (currentResults.length > 0) { %>
+                        <button type="button" id="downloadPdfBtn" class="btn btn-primary" data-term="<%= activeSession ? activeSession.currentTerm : 'First Term' %>" data-session="<%= student.currentSession %>">
+                            <i class="fas fa-download"></i> Download PDF
+                        </button>
+                    <% } %>
+                </div>
+            </div>
+
+            <% if (currentResults.length > 0) { %>
+                <div class="results-table-container">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>CA</th>
+                                <th>Exam</th>
+                                <th>Total</th>
+                                <th>Grade</th>
+                                <th>Remark</th>
+                                <th>Subject Position</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% currentResults.forEach(result => { %>
+                                <tr>
+                                    <td class="subject-name"><%= result.subject %></td>
+                                    <td><%= result.ca1 %></td>
+                                    <td><%= result.exam %></td>
+                                    <td class="total-score"><%= result.total %></td>
+                                    <td>
+                                        <span class="grade grade-<%= result.grade.toLowerCase() %>">
+                                            <%= result.grade %>
+                                        </span>
+                                    </td>
+                                    <td class="remark remark-<%= result.remark.toLowerCase().replace(/\s+/g, '-') %>">
+                                        <%= result.remark %>
+                                    </td>
+                                    <td class="position">
+                                        <% if (result.subjectPosition) { %>
+                                            <%= result.subjectPosition %>
+                                        <% } else { %>
+                                            -
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="results-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Total Subjects:</span>
+                        <span class="summary-value"><%= stats.totalSubjects %></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Marks:</span>
+                        <span class="summary-value"><%= stats.totalMarks %></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Average Score:</span>
+                        <span class="summary-value"><%= stats.averageScore %>%</span>
+                    </div>
+                    <% if (stats.classPosition) { %>
+                        <div class="summary-item">
+                            <span class="summary-label">Class Position:</span>
+                            <span class="summary-value"><%= stats.classPosition %></span>
+                        </div>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <div class="no-results">
+                    <div class="no-results-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h3>Result not yet uploaded</h3>
+                    <p>Your results for the current term have not been published yet.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('tokenGateForm')?.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const tokenInput = document.getElementById('portalToken');
+    const errorBox = document.getElementById('tokenGateError');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    errorBox.textContent = '';
+    submitButton.disabled = true;
+    submitButton.textContent = 'Checking token...';
+
+    try {
+        const response = await fetch('/student/portal/verify-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: tokenInput.value })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            window.location.reload();
+        } else {
+            errorBox.textContent = data.message || 'Unable to verify token';
+            submitButton.disabled = false;
+            submitButton.textContent = 'Unlock Portal';
+        }
+    } catch (error) {
+        errorBox.textContent = 'Unable to verify token right now.';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Unlock Portal';
+    }
+});
+</script>
+
+<style>
+.portal-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 2rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(30deg, transparent 48%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0.08) 51%, transparent 52%),
+        linear-gradient(150deg, transparent 48%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0.08) 51%, transparent 52%);
+    background-size: 40px 40px;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.stat-card.card-gold {
+    background: linear-gradient(135deg, #c9a961 0%, #a68649 100%);
+    color: #fff;
+}
+
+.stat-card.card-blue {
+    background: linear-gradient(135deg, #3d4d6b 0%, #2a3548 100%);
+    color: #fff;
+}
+
+.stat-card.card-green {
+    background: linear-gradient(135deg, #234d7f 0%, #172f52 100%);
+    color: #fff;
+}
+
+.stat-card.card-purple {
+    background: linear-gradient(135deg, #255f63 0%, #173a3d 100%);
+    color: #fff;
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-icon i {
+    color: #ffffff;
+    font-size: 32px;
+}
+
+.stat-content {
+    position: relative;
+    z-index: 1;
+}
+
+.stat-content h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0;
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.stat-content p {
+    margin: 0;
+    color: #ffffff !important;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.announcements-section {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: 1px solid #f1f5f9;
+}
+
+.announcements-section h2 {
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    margin-top: 0;
+}
+
+.announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.announcement-card {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.announcement-card.priority-low {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.announcement-card.priority-normal {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+}
+
+.announcement-card.priority-high {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+}
+
+.announcement-card.priority-urgent {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.announcement-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.announcement-header h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.announcement-priority {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background: #1e293b;
+    color: var(--white);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.announcement-date {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.announcement-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup-content {
+    background: white;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.popup-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popup-header h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.25rem;
+}
+
+.popup-body {
+    padding: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.popup-footer {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #64748b;
+    transition: color 0.3s ease;
+}
+
+.close-popup:hover {
+    color: #1e293b;
+}
+
+.announcement-item {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.announcement-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.announcement-item h4 {
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.announcement-item p {
+    color: #475569;
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.current-results {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.5rem;
+}
+
+.section-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.btn {
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background: #1e293b;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #334155;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #1e293b;
+    color: #1e293b;
+}
+
+.btn-outline:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.results-table-container {
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #1e293b;
+}
+
+.results-table th {
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #374151;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.results-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.results-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.total-score {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.grade {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.grade-a {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.grade-b {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.grade-c {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.grade-d {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.grade-f {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.remark {
+    padding: 0.25rem 0.75rem;
+    /* border-radius: 0.375rem; */
+    font-weight: 500;
+    font-size: 0.875rem;
+    width: fit-content !important;
+}
+
+.remark-excellent {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.remark-very-good {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.remark-good {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.remark-average {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.remark-poor {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.position {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.results-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.summary-value {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #64748b;
+}
+
+.no-results-icon {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.no-results h3 {
+    color: #1e293b;
+    margin: 1rem 0 0.5rem 0;
+}
+
+.no-results p {
+    color: #64748b;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .portal-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .stat-content h3 {
+        font-size: 2rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .section-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .results-table th,
+    .results-table td {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .results-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .portal-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-content h3 {
+        font-size: 1.75rem;
+    }
+}
+</style>
+
+<script>
+function closeAnnouncementPopup() {
+    const popup = document.getElementById('announcementPopup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
+
+setTimeout(function() {
+    const popup = document.getElementById('announcementPopup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}, 30000);
+
+// Download PDF quietly without prompting for a token again
+document.getElementById('downloadPdfBtn')?.addEventListener('click', function() {
+  const term = this.dataset.term;
+  const session = this.dataset.session;
+  window.location.href = `/student/results/download?term=${encodeURIComponent(term)}&session=${encodeURIComponent(session)}`;
+});
+</script>
+
+<%- include('../../partials/footer') %>

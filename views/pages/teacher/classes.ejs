@@ -1,0 +1,19 @@
+<%- include('../../partials/header') %>
+<div style="padding:2rem">
+  <h1>My Classes</h1>
+  <% if (classData && classData.length > 0) { %>
+    <% classData.forEach(cd => { %>
+      <h2><%= cd.className %> (<%= cd.count %> students)</h2>
+      <% if (cd.students.length > 0) { %>
+        <ul>
+          <% cd.students.forEach(s => { %><li><%= s.fullName %></li><% }) %>
+        </ul>
+      <% } else { %>
+        <p>No students in this class.</p>
+      <% } %>
+    <% }) %>
+  <% } else { %>
+    <p>No classes assigned.</p>
+  <% } %>
+</div>
+<%- include('../../partials/footer') %>

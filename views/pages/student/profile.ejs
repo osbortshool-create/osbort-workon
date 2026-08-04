@@ -1,0 +1,385 @@
+<%- include('../../partials/header') %>
+
+<div class="student-portal">
+    <div class="portal-header">
+        <div class="student-info">
+            <% const hasPhoto = student.passportURL && String(student.passportURL).trim() && !['/images/default-avatar.png','default-avatar.png','/uploads/default-avatar.png'].includes(String(student.passportURL)); %>
+            <% const initials = (student.fullName || 'Student').split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase(); %>
+            <% if (hasPhoto) { %>
+                <img src="<%= student.passportURL %>" alt="<%= student.fullName %>" class="student-photo-large">
+            <% } else { %>
+                <div class="student-avatar-fallback student-avatar-large" title="<%= student.fullName %>">
+                    <span><%= initials %></span>
+                </div>
+            <% } %>
+            <div class="student-details">
+                <h1><%= student.fullName %></h1>
+                <p class="student-id">ID: <%= student.studentID %></p>
+                <p class="student-class"><%= student.currentClass %> | <%= student.currentSession %></p>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <a href="/student/portal" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">
+                <i class="fas fa-arrow-left"></i> Back to Portal
+            </a>
+        </div>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="profile-content">
+        <!-- Personal Information -->
+        <div class="profile-section">
+            <h2>Personal Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Full Name:</label>
+                    <span><%= student.fullName %></span>
+                </div>
+                <div class="info-item">
+                    <label>Student ID:</label>
+                    <span><%= student.studentID %></span>
+                </div>
+                <div class="info-item">
+                    <label>Gender:</label>
+                    <span><%= student.gender %></span>
+                </div>
+                <div class="info-item">
+                    <label>Date of Birth:</label>
+                    <span><%= new Date(student.dateOfBirth).toLocaleDateString() %></span>
+                </div>
+                <div class="info-item">
+                    <label>Age:</label>
+                    <span><%= student.getAge() %> years</span>
+                </div>
+                <div class="info-item">
+                    <label>Admission Date:</label>
+                    <span><%= new Date(student.admissionDate).toLocaleDateString() %></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Academic Information -->
+        <div class="profile-section">
+            <h2>Academic Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Current Class:</label>
+                    <span><%= student.currentClass %></span>
+                </div>
+                <div class="info-item">
+                    <label>Section:</label>
+                    <span><%= student.section %></span>
+                </div>
+                <div class="info-item">
+                    <label>Current Session:</label>
+                    <span><%= student.currentSession %></span>
+                </div>
+                <div class="info-item">
+                    <label>Status:</label>
+                    <span class="status-badge <%= student.isActive ? 'active' : 'inactive' %>">
+                        <%= student.isActive ? 'Active' : 'Inactive' %>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Information -->
+        <div class="profile-section">
+            <h2>Contact Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Parent Phone:</label>
+                    <span><%= student.parentPhone %></span>
+                </div>
+                <div class="info-item">
+                    <label>Parent Email:</label>
+                    <span><%= student.parentEmail || 'Not provided' %></span>
+                </div>
+                <div class="info-item full-width">
+                    <label>Address:</label>
+                    <span><%= student.address || 'Not provided' %></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Academic History -->
+        <% if (student.archivedSessions && student.archivedSessions.length > 0) { %>
+            <div class="profile-section">
+                <h2>Academic History</h2>
+                <div class="history-list">
+                    <% student.archivedSessions.forEach(session => { %>
+                        <div class="history-item">
+                            <div class="history-session">
+                                <strong><%= session.sessionName %></strong>
+                                <span class="history-class"><%= session.className %></span>
+                            </div>
+                            <div class="history-status">
+                                <% if (session.promoted) { %>
+                                    <span class="status-badge promoted">Promoted</span>
+                                    <small><%= new Date(session.promotionDate).toLocaleDateString() %></small>
+                                <% } else { %>
+                                    <span class="status-badge not-promoted">Not Promoted</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+        
+        <!-- Change Password -->
+        <div class="profile-section">
+            <h2>Change Password</h2>
+            <form method="POST" action="/student/profile/password" class="password-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password *</label>
+                        <input type="password" id="currentPassword" name="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password *</label>
+                        <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password *</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-content {
+    display: grid;
+    gap: 2rem;
+}
+
+.profile-section {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+.profile-section h2 {
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    border-bottom: 2px solid var(--light-gray);
+    padding-bottom: 0.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-size: 0.875rem;
+}
+
+.info-item span {
+    color: var(--dark-gray);
+    font-size: 1rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status-badge.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.promoted {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.not-promoted {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--light-gray);
+    border-radius: 0.375rem;
+}
+
+.history-session {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.history-class {
+    color: var(--secondary-color);
+    font-size: 0.875rem;
+}
+
+.history-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.history-status small {
+    color: var(--secondary-color);
+    font-size: 0.75rem;
+}
+
+.password-form {
+    max-width: 600px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: var(--dark-gray);
+}
+
+.form-group input {
+    padding: 0.75rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .portal-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .history-item {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .history-status {
+        align-items: center;
+    }
+}
+</style>
+
+<script>
+// Password confirmation validation
+document.addEventListener('DOMContentLoaded', function() {
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const form = document.querySelector('.password-form');
+    
+    function validatePasswords() {
+        if (newPasswordInput.value !== confirmPasswordInput.value) {
+            confirmPasswordInput.setCustomValidity('Passwords do not match');
+        } else {
+            confirmPasswordInput.setCustomValidity('');
+        }
+    }
+    
+    newPasswordInput.addEventListener('input', validatePasswords);
+    confirmPasswordInput.addEventListener('input', validatePasswords);
+    
+    form.addEventListener('submit', function(e) {
+        if (newPasswordInput.value !== confirmPasswordInput.value) {
+            e.preventDefault();
+            alert('New passwords do not match');
+        }
+    });
+});
+</script>
+
+<%- include('../../partials/footer') %>

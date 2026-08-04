@@ -1,0 +1,165 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+  <div class="page-header">
+    <h1>Score Progress</h1>
+    <div class="session-info">
+      <% if (activeSession) { %>
+        <span class="session-badge"><%= activeSession.sessionName %></span>
+      <% } %>
+      <span class="session-badge"><%= selectedTerm %></span>
+    </div>
+  </div>
+
+  <div class="result-entry-container">
+    <div class="filters">
+      <form method="GET" action="/admin/score-entry/progress" class="filter-form">
+        <div class="filter-group">
+          <label for="term">Term</label>
+          <select id="term" name="term" required>
+            <option value="First Term" <%= selectedTerm === 'First Term' ? 'selected' : '' %>>First Term</option>
+            <option value="Second Term" <%= selectedTerm === 'Second Term' ? 'selected' : '' %>>Second Term</option>
+            <option value="Third Term" <%= selectedTerm === 'Third Term' ? 'selected' : '' %>>Third Term</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Load Progress</button>
+      </form>
+    </div>
+
+    <div class="result-form-container">
+      <div class="page-header" style="margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+        <h2>Class Completion Overview</h2>
+        <p>Progress is based on how many scores have been entered for each class and subject for the active session and selected term.</p>
+      </div>
+
+      <% if (classProgress.length === 0) { %>
+        <div class="alert alert-info">No class data available yet.</div>
+      <% } else { %>
+        <% classProgress.forEach((cls) => { %>
+          <div class="progress-card">
+            <div class="progress-card-header">
+              <div>
+                <h3><%= cls.className %></h3>
+                <p><%= cls.studentsCount %> students • <%= cls.subjectProgress.length %> subjects</p>
+              </div>
+              <div class="completion-chip <%= cls.completionPercent >= 100 ? 'complete' : cls.completionPercent >= 60 ? 'mid' : 'pending' %>">
+                <%= cls.completionPercent %>%
+              </div>
+            </div>
+
+            <div class="progress-track">
+              <div class="progress-fill <%= cls.completionPercent >= 100 ? 'complete' : cls.completionPercent >= 60 ? 'mid' : 'pending' %>" style="width: <%= cls.completionPercent %>%;"></div>
+            </div>
+
+            <div class="progress-subject-list">
+              <% cls.subjectProgress.forEach((subject) => { %>
+                <div class="progress-subject-item">
+                  <div class="progress-subject-meta">
+                    <span><%= subject.subject %></span>
+                    <strong><%= subject.percentage %>%</strong>
+                  </div>
+                  <div class="progress-track small">
+                    <div class="progress-fill <%= subject.percentage >= 100 ? 'complete' : subject.percentage >= 60 ? 'mid' : 'pending' %>" style="width: <%= subject.percentage %>%;"></div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<style>
+.progress-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.progress-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.progress-card-header h3 {
+  margin: 0 0 0.2rem;
+  color: #0f172a;
+}
+
+.progress-card-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.completion-chip {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.completion-chip.complete,
+.progress-fill.complete {
+  background: #10b981;
+}
+
+.completion-chip.mid,
+.progress-fill.mid {
+  background: #f59e0b;
+}
+
+.completion-chip.pending,
+.progress-fill.pending {
+  background: #ef4444;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 0.85rem;
+}
+
+.progress-track.small {
+  height: 8px;
+  margin-bottom: 0;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.progress-subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.progress-subject-item {
+  padding: 0.7rem 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.progress-subject-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+  color: #334155;
+  font-size: 0.95rem;
+}
+</style>
+
+<%- include('../../partials/footer') %>

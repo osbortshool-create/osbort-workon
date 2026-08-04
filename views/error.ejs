@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title || 'Error' %></title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f44336;
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    .container {
+      background: white;
+      color: black;
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><%= title || 'Something Went Wrong' %></h1>
+    <p><%= message || 'An unexpected error occurred.' %></p>
+    <% if (error && error.stack) { %>
+      <pre><%= error.stack %></pre>
+    <% } %>
+    <a href="/">Go Back Home</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Manage Classes</h1>
+        <a href="/admin/classes/add" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Class
+        </a>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Class Name</th>
+                    <th>Level</th>
+                    <th>Sections</th>
+                    <th>Subjects</th>
+                    <th>Class Teacher</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (classes && classes.length > 0) { %>
+                    <% classes.forEach(cls => { %>
+                        <tr>
+                            <td><strong><%= cls.className %></strong></td>
+                            <td><%= cls.level %></td>
+                            <td>
+                                <% if (cls.sections && cls.sections.length > 0) { %>
+                                    <% cls.sections.forEach(section => { %>
+                                        <span class="section-badge"><%= section.sectionName %></span>
+                                    <% }) %>
+                                <% } else { %>
+                                    <span class="text-muted">No sections</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (cls.assignedSubjects && cls.assignedSubjects.length > 0) { %>
+                                    <div class="subjects-list">
+                                        <% cls.assignedSubjects.slice(0, 3).forEach(subject => { %>
+                                            <span class="subject-badge"><%= subject.subjectName %></span>
+                                        <% }) %>
+                                        <% if (cls.assignedSubjects.length > 3) { %>
+                                            <span class="more-subjects">+<%= cls.assignedSubjects.length - 3 %> more</span>
+                                        <% } %>
+                                    </div>
+                                <% } else { %>
+                                    <span class="text-muted">No subjects</span>
+                                <% } %>
+                            </td>
+                            <td><%= cls.classTeacher || 'Not assigned' %></td>
+                            <td>
+                                <span class="status-badge <%= cls.isActive ? 'active' : 'inactive' %>">
+                                    <%= cls.isActive ? 'Active' : 'Inactive' %>
+                                </span>
+                            </td>
+                            <td class="actions">
+                                <a href="/admin/classes/edit/<%= cls._id %>" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="/admin/classes/toggle/<%= cls._id %>" style="display: inline;" onsubmit="return confirm(`Are you sure you want to <%= cls.isActive ? 'deactivate' : 'activate' %> this class?`);">
+                                    <button type="submit" class="btn btn-sm <%= cls.isActive ? 'btn-warning' : 'btn-success' %>">
+                                        <i class="fas fa-<%= cls.isActive ? 'ban' : 'check' %>"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center">No classes found</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.section-badge {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    margin: 0.1rem;
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.subject-badge {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    margin: 0.1rem;
+    background-color: #f0fdf4;
+    color: #166534;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.subjects-list {
+    max-width: 200px;
+}
+
+.more-subjects {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.text-muted {
+    color: #6b7280;
+    font-style: italic;
+}
+</style>
+
+<%- include('../../partials/footer') %>

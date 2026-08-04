@@ -1,0 +1,118 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Add New Student</h1>
+        <a href="/admin/students" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">
+            <i class="fas fa-arrow-left"></i> Back to Students
+        </a>
+    </div>
+    
+    <% if (locals.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= error %>
+        </div>
+    <% } %>
+    
+
+    <form method="POST" action="/admin/students/add" enctype="multipart/form-data" class="form-container">
+        <div class="form-section">
+            <h2>Personal Information</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="studentID">Student ID (Optional)</label>
+                    <input type="text" id="studentID" name="studentID" placeholder="Optional">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password" required minlength="6" value="student123">
+                    <small>Default password is "student123". Student can change this after login.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gender">Gender *</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="age">Age *</label>
+                    <input type="number" id="age" name="age" min="1" max="120" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="passport">Passport Photo</label>
+                    <input type="file" id="passport" name="passport" accept="image/*">
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Contact Information</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="parentPhone">Parent Phone</label>
+                    <input type="tel" id="parentPhone" name="parentPhone">
+                </div>
+                
+                <div class="form-group">
+                    <label for="parentEmail">Parent Email</label>
+                    <input type="email" id="parentEmail" name="parentEmail">
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Academic Information</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="currentClass">Class *</label>
+                    <select id="currentClass" name="currentClass" required>
+                        <option value="">Select Class</option>
+                        <% classes.forEach(cls => { %>
+                            <option value="<%= cls.className %>"><%= cls.className %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="section">Section</label>
+                    <select id="section" name="section">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="currentSession">Session</label>
+                    <input type="text" id="currentSession" name="currentSession" value="<%= activeSession ? activeSession.sessionName : '' %>" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Add Student
+            </button>
+            <a href="/admin/students" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<%- include('../../partials/footer') %>

@@ -1,0 +1,212 @@
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const Student = require('../models/Student');
+const School = require('../models/School');
+const Announcement = require('../models/Announcement');
+
+// Landing Page
+router.get('/', async (req, res) => {
+  try {
+    const school = await School.findOne({ campus: 'Lagos' }) || await School.findOne({}) || null;
+    const announcements = await Announcement.find({
+      isActive: true,
+      targetAudience: { $in: ['all'] }
+    }).sort({ createdAt: -1 }).limit(3);
+    
+    res.render('pages/landing', {
+      title: 'Welcome to EduControl NG',
+      school: school,
+      announcements
+    });
+  } catch (error) {
+    console.error('Error loading landing page:', error);
+    res.render('pages/landing', {
+      title: 'Welcome to EduControl NG',
+      school: null,
+      announcements: []
+    });
+  }
+});
+
+// Login Page
+router.get('/login', (req, res) => {
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+  res.render('pages/login', {
+    title: 'Login - EduControl NG',
+    error: null
+  });
+});
+
+// Login POST - COMPLETELY FIXED for student authentication
+router.post('/login', async (req, res) => {
+  const { email, password, loginType, campus } = req.body;
+
+  const selectedCampus = ['Lagos', 'Ekiti'].includes(campus) ? campus : 'Lagos';
+
+  console.log('Login attempt:', { email, loginType, campus: selectedCampus });
+
+  try {
+    if (loginType === 'student') {
+      const loginIdentifier = (email || '').trim();
+      const escapedEmail = loginIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      console.log('Attempting student login with parent contact:', loginIdentifier);
+      const student = await Student.findOne({
+        campus: selectedCampus,
+        $or: [
+          { parentPhone: loginIdentifier },
+          { parentEmail: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
+          { studentID: loginIdentifier }
+        ]
+      });
+      
+      if (!student) {
+        console.log('Student login failed: Student not found');
+        return res.render('pages/login', {
+          title: 'Login - EduControl NG',
+          error: 'Invalid parent phone/email or password'
+        });
+      }
+
+      console.log('Student found:', {
+        id: student.studentID,
+        name: student.fullName,
+        isActive: student.isActive
+      });
+
+      // FIXED: Use comparePassword method correctly
+      console.log('Checking password...');
+      const isValidPassword = await student.comparePassword(password);
+      console.log('Password validation result:', isValidPassword);
+      
+      if (!isValidPassword) {
+        console.log('Student login failed: Invalid password');
+        return res.render('pages/login', {
+          title: 'Login - EduControl NG',
+          error: 'Invalid parent phone/email or password'
+        });
+      }
+
+      if (!student.isActive) {
+        console.log('Student login failed: Account deactivated');
+        return res.render('pages/login', {
+          title: 'Login - EduControl NG',
+          error: 'Your account has been deactivated. Contact the school administration.'
+        });
+      }
+
+      // Update last login timestamp for the student
+      student.lastLogin = new Date();
+      await student.save();
+
+      req.session.user = {
+        id: student._id,
+        name: student.fullName,
+        studentID: student.studentID,
+        role: 'student',
+        currentClass: student.currentClass,
+        currentSession: student.currentSession,
+        lastLogin: student.lastLogin,
+        campus: selectedCampus
+      };
+      req.session.studentTokenVerified = false;
+      delete req.session.studentToken;
+
+      console.log('Student login successful');
+      
+      // Get announcements for popup
+      const announcements = await Announcement.find({
+        isActive: true,
+        targetAudience: { $in: ['all', 'students'] },
+        campus: selectedCampus
+      }).sort({ createdAt: -1 }).limit(3);
+      
+      req.session.announcements = announcements;
+      
+      return res.redirect('/student/portal');
+    } else {
+      // Staff login — try selected campus first, then fall back to any campus
+      // so a single admin account can access both campuses
+      console.log('Looking for staff user with email:', email, 'campus:', selectedCampus);
+      let user = await User.findOne({ email, campus: selectedCampus });
+      
+      if (!user) {
+        console.log('User not found in', selectedCampus, 'campus, trying any campus');
+        user = await User.findOne({ email });
+      }
+      
+      if (!user) {
+        console.log('Staff login failed: User not found');
+        return res.render('pages/login', {
+          title: 'Login - EduControl NG',
+          error: 'Invalid email or password'
+        });
+      }
+
+      console.log('Found user:', {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive
+      });
+
+      const isValidPassword = await user.comparePassword(password);
+      console.log('Password validation result:', isValidPassword);
+      
+      if (!isValidPassword) {
+        console.log('Staff login failed: Invalid password');
+        return res.render('pages/login', {
+          title: 'Login - EduControl NG',
+          error: 'Invalid email or password'
+        });
+      }
+
+      if (!user.isActive) {
+        console.log('Staff login failed: Account deactivated');
+        return res.render('pages/login', {
+          title: 'Login - EduControl NG',
+          error: 'Your account has been deactivated. Contact the administrator.'
+        });
+      }
+
+      // Update last login timestamp for the staff user
+      user.lastLogin = new Date();
+      await user.save();
+
+      req.session.user = {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        assignedSubjects: user.assignedSubjects,
+        assignedClasses: user.assignedClasses,
+        lastLogin: user.lastLogin,
+        campus: selectedCampus
+      };
+
+      console.log('Staff login successful, redirecting to dashboard');
+      return res.redirect('/dashboard');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.render('pages/login', {
+      title: 'Login - EduControl NG',
+      error: 'An error occurred during login. Please try again.'
+    });
+  }
+});
+
+// Logout
+router.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+    }
+    res.redirect('/login');
+  });
+});
+
+module.exports = router;

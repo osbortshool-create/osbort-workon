@@ -1,0 +1,406 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Approve Results</h1>
+        <div class="publish-wrapper">
+            <% if (canApprove) { %>
+                <button type="button" id="approveResults" class="btn btn-success">
+                    <i class="fas fa-check-double"></i> Approve Results
+                </button>
+            <% } %>
+            <% if (canPublish) { %>
+                <button type="button" id="publishResults" class="btn publish-btn" <%= !(query.class && query.term && query.session) ? 'disabled' : '' %>>
+                    <i class="fas fa-upload"></i> Publish Results
+                </button>
+            <% } %>
+            <% if (query.class && query.term && query.session) { %>
+                <a href="/tokens?class=<%= encodeURIComponent(query.class) %>&term=<%= encodeURIComponent(query.term) %>&session=<%= encodeURIComponent(query.session) %>" class="btn btn-secondary" style="background-color: #0f766e;">
+                    <i class="fas fa-key"></i> Generate Tokens
+                </a>
+            <% } %>
+        </div>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="filters">
+        <form method="GET" action="/result/approve" class="filter-form">
+            <div class="filter-group">
+                <label for="class">Class:</label>
+                <select name="class" id="class">
+                    <option value="">All Classes</option>
+                    <% classes.forEach(className => { %>
+                        <option value="<%= className %>" <%= query.class === className ? 'selected' : '' %>>
+                            <%= className %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="term">Term:</label>
+                <select name="term" id="term" required>
+                    <option value="">Select Term</option>
+                    <% terms.forEach(term => { %>
+                        <option value="<%= term %>" <%= query.term === term ? 'selected' : '' %>>
+                            <%= term %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="session">Session:</label>
+                <select name="session" id="session" required>
+                    <option value="">Select Session</option>
+                    <% sessions.forEach(session => { %>
+                        <option value="<%= session %>" <%= query.session === session ? 'selected' : '' %>>
+                            <%= session %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary" style="background-color: #1e293b;">Filter</button>
+            <a href="/result/approve" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b; height: 40px;">Clear</a>
+             <a href="/result/published" class="btn btn-secondary" style="background-color: #1e293b;">Published Results</a>
+        </form>
+    </div>
+
+    <div class="table-container" style="margin-top: 1rem;">
+        </form>
+    </div>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>Class</th>
+                    <th>Subject</th>
+                    <th>Term</th>
+                    <th>Session</th>
+                    <th>CA (40)</th>
+                    <th>Exam (60)</th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                    <th>Remark</th>
+                    <th>Status</th>
+                    <th>Entered By</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (results && results.length > 0) { %>
+                    <% results.forEach(result => { %>
+                        <tr data-result-id="<%= result._id %>">
+                            <td><%= result.studentName %></td>
+                            <td><%= result.studentID %></td>
+                            <td><%= result.className %></td>
+                            <td><%= result.subject %></td>
+                            <td><%= result.term %></td>
+                            <td><%= result.session %></td>
+                            <td><%= result.ca1 %></td>
+                            <td><%= result.exam %></td>
+                            <td class="total-score"><%= result.total %></td>
+                            <td>
+                                <span class="grade grade-<%= result.grade.toLowerCase() %>">
+                                    <%= result.grade %>
+                                </span>
+                            </td>
+                            <td class="remark remark-<%= result.remark.toLowerCase().replace(/\s+/g, '-') %>">
+                                <%= result.remark %>
+                            </td>
+                            <td>
+                                <span class="status-badge status-<%= result.status %>">
+                                    <%= result.status.charAt(0).toUpperCase() + result.status.slice(1) %>
+                                </span>
+                            </td>
+                            <td><%= result.enteredBy %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="13" class="text-center">
+                            <% if (hasFilters) { %>
+                                No results found for the selected filters
+                            <% } else { %>
+                                Please select filters to view results pending approval
+                            <% } %>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %><%= query ? '&' + new URLSearchParams(query).toString() : '' %>" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <% } %>
+            
+            <span class="page-info">
+                Page <%= currentPage %> of <%= totalPages %>
+            </span>
+            
+            <% if (currentPage < totalPages) { %>
+                <a href="?page=<%= currentPage + 1 %><%= query ? '&' + new URLSearchParams(query).toString() : '' %>" class="btn btn-outline">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<style>
+.grade {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.grade-a1 { background: #d1fae5; color: #065f46; }
+.grade-b2, .grade-b3 { background: #dbeafe; color: #1e40af; }
+.grade-c4, .grade-c5, .grade-c6 { background: #fef3c7; color: #92400e; }
+.grade-d7 { background: #fed7aa; color: #9a3412; }
+.grade-e8 { background: #fecaca; color: #991b1b; }
+.grade-f9 { background: #fee2e2; color: #991b1b; }
+
+.remark {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.remark-excellent { color: #065f46; }
+.remark-very-good { color: #1e40af; }
+.remark-good { color: #059669; }
+.remark-credit { color: #92400e; }
+.remark-pass { color: #9a3412; }
+.remark-fail { color: #991b1b; }
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Modal for publish confirmation */
+.modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    width: min(440px, 90%);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.25);
+    text-align: center;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.25rem;
+}
+
+.modal-message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: #fef2f2;
+    color: #991b1b;
+    display: none;
+}
+
+.modal-message:empty {
+    display: none;
+}
+
+.status-sent {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.total-score {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.publish-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.publish-btn {
+    background-color: #121a2c;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.65rem 1.2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.publish-btn:hover {
+    transform: translateY(-1px);
+    background-color: rgba(18, 26, 44, 0.9);
+}
+
+.publish-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
+
+<div id="publishModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>Publish Results</h3>
+        <p>Are you sure you want to publish all currently displayed results? Once published, results cannot be edited.</p>
+        <div class="modal-actions">
+            <button type="button" id="publishCancel" class="btn btn-outline">No, Cancel</button>
+            <button type="button" id="publishConfirm" class="btn btn-primary">Yes, Publish</button>
+        </div>
+        <div id="publishMessage" class="modal-message"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const publishBtn = document.getElementById('publishResults');
+    const approveBtn = document.getElementById('approveResults');
+    const modal = document.getElementById('publishModal');
+    const cancelBtn = document.getElementById('publishCancel');
+    const confirmBtn = document.getElementById('publishConfirm');
+    const messageBox = document.getElementById('publishMessage');
+
+    if (approveBtn) {
+        approveBtn.addEventListener('click', async () => {
+            const resultIds = Array.from(document.querySelectorAll('tr[data-result-id]')).map(row => row.getAttribute('data-result-id'));
+            if (!resultIds.length) {
+                alert('No results are available to approve.');
+                return;
+            }
+
+            if (!confirm('Approve these results for the selected class and term?')) {
+                return;
+            }
+
+            approveBtn.disabled = true;
+            approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving...';
+
+            try {
+                const response = await fetch('/result/approve-multiple', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ resultIds })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to approve results.');
+                    approveBtn.disabled = false;
+                    approveBtn.innerHTML = '<i class="fas fa-check-double"></i> Approve Results';
+                }
+            } catch (error) {
+                console.error('Approve error:', error);
+                alert('An error occurred while approving results.');
+                approveBtn.disabled = false;
+                approveBtn.innerHTML = '<i class="fas fa-check-double"></i> Approve Results';
+            }
+        });
+    }
+
+    if (!publishBtn || !modal) return;
+
+    publishBtn.addEventListener('click', () => {
+        messageBox.textContent = '';
+        modal.style.display = 'flex';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        messageBox.textContent = '';
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Publishing...';
+
+        const params = new URLSearchParams(window.location.search);
+        const className = params.get('class');
+        const subject = params.get('subject');
+        const term = params.get('term');
+        const session = params.get('session');
+
+        try {
+            const response = await fetch('/result/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ className, subject, term, session })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.reload();
+            } else {
+                messageBox.textContent = data.message || 'Failed to publish results.';
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Yes, Publish';
+            }
+        } catch (error) {
+            console.error('Publish error:', error);
+            messageBox.textContent = 'An error occurred while publishing results.';
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Yes, Publish';
+        }
+    });
+
+    // Close modal when clicking outside content
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<%- include('../../partials/footer') %>

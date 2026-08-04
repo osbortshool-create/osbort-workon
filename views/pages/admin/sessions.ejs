@@ -1,0 +1,411 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Manage Academic Sessions</h1>
+        <button type="button" class="btn btn-primary" onclick="showAddSessionModal()">
+            <i class="fas fa-plus"></i> Add Session
+        </button>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Session Name</th>
+                    <th>Current Term</th>
+                    <th>Status</th>
+                    <th>Session Dates</th>
+                    <th>Term Dates</th>
+                    <th>Term Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (sessions && sessions.length > 0) { %>
+                    <% sessions.forEach(session => { %>
+                        <tr>
+                            <td><strong><%= session.sessionName %></strong></td>
+                            <td>
+                                <span class="term-badge <%= session.currentTerm.toLowerCase().replace(' ', '-') %>">
+                                    <%= session.currentTerm %>
+                                </span>
+                            </td>
+
+                            <td>
+                                <% if (session.isActive) { %>
+                                    <span class="status-badge active">Active</span>
+                                <% } else { %>
+                                    <span class="status-badge inactive">Inactive</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <div class="date-info">
+                                    <% if (session.startDate) { %>
+                                        <small>Start: <%= new Date(session.startDate).toLocaleDateString() %></small><br>
+                                    <% } %>
+                                    <% if (session.endDate) { %>
+                                        <small>End: <%= new Date(session.endDate).toLocaleDateString() %></small>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="term-dates">
+                                    <% if (session.firstTermStart) { %>
+                                        <small>1st: <%= new Date(session.firstTermStart).toLocaleDateString() %> - <%= session.firstTermEnd ? new Date(session.firstTermEnd).toLocaleDateString() : 'TBD' %></small><br>
+                                    <% } %>
+                                    <% if (session.secondTermStart) { %>
+                                        <small>2nd: <%= new Date(session.secondTermStart).toLocaleDateString() %> - <%= session.secondTermEnd ? new Date(session.secondTermEnd).toLocaleDateString() : 'TBD' %></small><br>
+                                    <% } %>
+                                    <% if (session.thirdTermStart) { %>
+                                        <small>3rd: <%= new Date(session.thirdTermStart).toLocaleDateString() %> - <%= session.thirdTermEnd ? new Date(session.thirdTermEnd).toLocaleDateString() : 'TBD' %></small>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="term-status">
+                                    <button class="term-badge <%= session.firstTermLocked ? 'locked' : 'open' %>" onclick="toggleTermLock('<%= session._id %>', 'First Term')">
+                                        1st: <%= session.firstTermLocked ? 'Locked' : 'Open' %>
+                                    </button>
+                                    <button class="term-badge <%= session.secondTermLocked ? 'locked' : 'open' %>" onclick="toggleTermLock('<%= session._id %>', 'Second Term')">
+                                        2nd: <%= session.secondTermLocked ? 'Locked' : 'Open' %>
+                                    </button>
+                                    <button class="term-badge <%= session.thirdTermLocked ? 'locked' : 'open' %>" onclick="toggleTermLock('<%= session._id %>', 'Third Term')">
+                                        3rd: <%= session.thirdTermLocked ? 'Locked' : 'Open' %>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="actions">
+                                <% if (!session.isActive) { %>
+                                    <form method="POST" action="/admin/sessions/activate/<%= session._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to activate this session? This will deactivate the current active session.')">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </form>
+                                <% } %>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="editSession('<%= session._id %>', '<%= session.sessionName %>', '<%= session.startDate ? new Date(session.startDate).toISOString().split('T')[0] : '' %>', '<%= session.endDate ? new Date(session.endDate).toISOString().split('T')[0] : '' %>', '<%= session.firstTermStart ? new Date(session.firstTermStart).toISOString().split('T')[0] : '' %>', '<%= session.firstTermEnd ? new Date(session.firstTermEnd).toISOString().split('T')[0] : '' %>', '<%= session.secondTermStart ? new Date(session.secondTermStart).toISOString().split('T')[0] : '' %>', '<%= session.secondTermEnd ? new Date(session.secondTermEnd).toISOString().split('T')[0] : '' %>', '<%= session.thirdTermStart ? new Date(session.thirdTermStart).toISOString().split('T')[0] : '' %>', '<%= session.thirdTermEnd ? new Date(session.thirdTermEnd).toISOString().split('T')[0] : '' %>')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form method="POST" action="/admin/sessions/delete/<%= session._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this session? This action cannot be undone.')">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center">No sessions found</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Session Modal -->
+<div id="addSessionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New Session</h3>
+            <button type="button" class="close-modal" onclick="hideAddSessionModal()">&times;</button>
+        </div>
+        <form method="POST" action="/admin/sessions/add">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="sessionName">Session Name *</label>
+                    <input type="text" id="sessionName" name="sessionName" required placeholder="e.g., 2024/2025">
+                </div>
+                
+                <h4>Session Dates</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="startDate">Session Start Date</label>
+                        <input type="date" id="startDate" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">Session End Date</label>
+                        <input type="date" id="endDate" name="endDate">
+                    </div>
+                </div>
+                
+                <h4>Term Dates</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="firstTermStart">First Term Start</label>
+                        <input type="date" id="firstTermStart" name="firstTermStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="firstTermEnd">First Term End</label>
+                        <input type="date" id="firstTermEnd" name="firstTermEnd">
+                    </div>
+                    <div class="form-group">
+                        <label for="secondTermStart">Second Term Start</label>
+                        <input type="date" id="secondTermStart" name="secondTermStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="secondTermEnd">Second Term End</label>
+                        <input type="date" id="secondTermEnd" name="secondTermEnd">
+                    </div>
+                    <div class="form-group">
+                        <label for="thirdTermStart">Third Term Start</label>
+                        <input type="date" id="thirdTermStart" name="thirdTermStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="thirdTermEnd">Third Term End</label>
+                        <input type="date" id="thirdTermEnd" name="thirdTermEnd">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Add Session</button>
+                <button type="button" class="btn btn-outline" onclick="hideAddSessionModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Session Modal -->
+<div id="editSessionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Session</h3>
+            <button type="button" class="close-modal" onclick="hideEditSessionModal()">&times;</button>
+        </div>
+        <form id="editSessionForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editSessionName">Session Name *</label>
+                    <input type="text" id="editSessionName" name="sessionName" required>
+                </div>
+                
+                <h4>Session Dates</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editStartDate">Session Start Date</label>
+                        <input type="date" id="editStartDate" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="editEndDate">Session End Date</label>
+                        <input type="date" id="editEndDate" name="endDate">
+                    </div>
+                </div>
+                
+                <h4>Term Dates</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editFirstTermStart">First Term Start</label>
+                        <input type="date" id="editFirstTermStart" name="firstTermStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="editFirstTermEnd">First Term End</label>
+                        <input type="date" id="editFirstTermEnd" name="firstTermEnd">
+                    </div>
+                    <div class="form-group">
+                        <label for="editSecondTermStart">Second Term Start</label>
+                        <input type="date" id="editSecondTermStart" name="secondTermStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="editSecondTermEnd">Second Term End</label>
+                        <input type="date" id="editSecondTermEnd" name="secondTermEnd">
+                    </div>
+                    <div class="form-group">
+                        <label for="editThirdTermStart">Third Term Start</label>
+                        <input type="date" id="editThirdTermStart" name="thirdTermStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="editThirdTermEnd">Third Term End</label>
+                        <input type="date" id="editThirdTermEnd" name="thirdTermEnd">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Update Session</button>
+                <button type="button" class="btn btn-outline" onclick="hideEditSessionModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.term-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.term-badge {
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.term-badge.open {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.term-badge.locked {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.term-badge:hover {
+    opacity: 0.8;
+}
+
+.date-info, .term-dates {
+    font-size: 0.8rem;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--medium-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.modal-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--medium-gray);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+</style>
+
+<script>
+function showAddSessionModal() {
+    document.getElementById('addSessionModal').style.display = 'flex';
+}
+
+function hideAddSessionModal() {
+    document.getElementById('addSessionModal').style.display = 'none';
+}
+
+function editSession(id, name, startDate, endDate, firstTermStart, firstTermEnd, secondTermStart, secondTermEnd, thirdTermStart, thirdTermEnd) {
+    document.getElementById('editSessionForm').action = `/admin/sessions/edit/${id}`;
+    document.getElementById('editSessionName').value = name;
+    document.getElementById('editStartDate').value = startDate;
+    document.getElementById('editEndDate').value = endDate;
+    document.getElementById('editFirstTermStart').value = firstTermStart;
+    document.getElementById('editFirstTermEnd').value = firstTermEnd;
+    document.getElementById('editSecondTermStart').value = secondTermStart;
+    document.getElementById('editSecondTermEnd').value = secondTermEnd;
+    document.getElementById('editThirdTermStart').value = thirdTermStart;
+    document.getElementById('editThirdTermEnd').value = thirdTermEnd;
+    document.getElementById('editSessionModal').style.display = 'flex';
+}
+
+function hideEditSessionModal() {
+    document.getElementById('editSessionModal').style.display = 'none';
+}
+
+function toggleTermLock(sessionId, term) {
+    fetch(`/admin/sessions/toggle-term-lock/${sessionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ term: term })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
+</script>
+
+<%- include('../../partials/footer') %>

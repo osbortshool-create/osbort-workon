@@ -1,0 +1,133 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Manage Staff</h1>
+        <a href="/admin/staff/add" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Staff
+        </a>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Phone</th>
+                    <th>Assigned Classes</th>
+                    <th>Assigned Subjects</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (staff && staff.length > 0) { %>
+                    <% staff.forEach(member => { %>
+                        <tr>
+                            <td><%= member.name %></td>
+                            <td><%= member.email %></td>
+                            <td>
+                                <span class="badge badge-<%= member.role %>">
+                                    <%= member.role.charAt(0).toUpperCase() + member.role.slice(1) %>
+                                </span>
+                            </td>
+                            <td><%= member.phone || 'N/A' %></td>
+                            <td>
+                                <% if (member.assignedClasses && member.assignedClasses.length > 0) { %>
+                                    <%= member.assignedClasses.join(', ') %>
+                                <% } else { %>
+                                    <span class="text-muted">None</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (member.assignedSubjects && member.assignedSubjects.length > 0) { %>
+                                    <%= member.assignedSubjects.join(', ') %>
+                                <% } else { %>
+                                    <span class="text-muted">None</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="status-badge <%= member.isActive ? 'active' : 'inactive' %>">
+                                    <%= member.isActive ? 'Active' : 'Inactive' %>
+                                </span>
+                            </td>
+                            <td class="actions">
+                                <a href="/admin/staff/edit/<%= member._id %>" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="/admin/staff/toggle/<%= member._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to <%= member.isActive ? 'deactivate' : 'activate' %> this staff member?')">
+                                    <button type="submit" class="btn btn-sm <%= member.isActive ? 'btn-warning' : 'btn-success' %>">
+                                        <i class="fas fa-<%= member.isActive ? 'ban' : 'check' %>"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center">No staff members found</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-teacher {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-officer {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.text-muted {
+    color: #6b7280;
+    font-style: italic;
+}
+</style>
+
+<%- include('../../partials/footer') %>

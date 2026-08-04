@@ -1,0 +1,304 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Post Practice Question</h1>
+        <a href="/admin/practice-questions" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b; display: flex; justify-self: end !important;">
+            <i class="fas fa-list"></i> View All Questions
+        </a>
+    </div>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= error %>
+        </div>
+    <% } %>
+    
+    <div class="form-container" style="margin-top: 10px;">
+        <form method="POST" action="/admin/post-practice-question" class="practice-form">
+            <div class="form-section">
+                <h2>Question Details</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="targetClass">Target Class *</label>
+                        <select id="targetClass" name="targetClass" required>
+                            <option value="">Select Class</option>
+                            <% classes.forEach(cls => { %>
+                                <option value="<%= cls.className %>"><%= cls.className %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject">Subject *</label>
+                        <select id="subject" name="subject" required>
+                            <option value="">Select Subject</option>
+                            <% subjects.forEach(subject => { %>
+                                <option value="<%= subject._id %>"><%= subject._id %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty Level</label>
+                        <select id="difficulty" name="difficulty">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width" style="margin-bottom: 1rem;">
+  <label for="question" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #1e293b;">
+    Question *
+  </label>
+  <textarea 
+    id="question" 
+    name="question" 
+    rows="4" 
+    required 
+    placeholder="Enter your practice question here..."
+    style="
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      resize: vertical;
+      box-sizing: border-box;
+      background-color: #fff;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    "
+    onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.2)'"
+    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'"
+  ></textarea>
+</div>
+
+            </div>
+            
+            <div class="form-section">
+                <h2>Answer Options</h2>
+                <div class="options-container">
+                    <div class="option-group">
+                        <div class="option-header">
+                            <input type="radio" id="correct1" name="correctAnswer" value="option1" required>
+                            <label for="correct1" class="option-label">Option A (Correct Answer)</label>
+                        </div>
+                        <input type="text" id="option1" name="option1" required placeholder="Enter option A..." class="option-input">
+                    </div>
+                    
+                    <div class="option-group">
+                        <div class="option-header">
+                            <input type="radio" id="correct2" name="correctAnswer" value="option2" required>
+                            <label for="correct2" class="option-label">Option B (Correct Answer)</label>
+                        </div>
+                        <input type="text" id="option2" name="option2" required placeholder="Enter option B..." class="option-input">
+                    </div>
+                    
+                    <div class="option-group">
+                        <div class="option-header">
+                            <input type="radio" id="correct3" name="correctAnswer" value="option3" required>
+                            <label for="correct3" class="option-label">Option C (Correct Answer)</label>
+                        </div>
+                        <input type="text" id="option3" name="option3" required placeholder="Enter option C..." class="option-input">
+                    </div>
+                    
+                    <div class="option-group">
+                        <div class="option-header">
+                            <input type="radio" id="correct4" name="correctAnswer" value="option4" required>
+                            <label for="correct4" class="option-label">Option D (Correct Answer)</label>
+                        </div>
+                        <input type="text" id="option4" name="option4" required placeholder="Enter option D..." class="option-input">
+                    </div>
+                </div>
+                
+                <div class="correct-answer-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Select the radio button next to the correct answer option</span>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Post Question
+                </button>
+                <button type="reset" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">
+                    <i class="fas fa-undo"></i> Reset Form
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.practice-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.options-container {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.option-group {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.option-group:hover {
+    border-color: #1e293b;
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.1);
+}
+
+.option-group:has(input[type="radio"]:checked) {
+    border-color: #10b981;
+    background: #f0fdf4;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.option-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.option-header input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #10b981;
+}
+
+.option-label {
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.option-group:has(input[type="radio"]:checked) .option-label {
+    color: #10b981;
+}
+
+.option-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.option-input:focus {
+    outline: none;
+    border-color: #1e293b;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
+}
+
+.option-group:has(input[type="radio"]:checked) .option-input {
+    border-color: #10b981;
+    background: white;
+}
+
+.correct-answer-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #eff6ff;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #1e293b;
+    border-right: 4px solid #1e293b;
+    margin-top: 1.5rem;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.correct-answer-note i {
+    color: #1e293b;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .option-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add visual feedback for radio button selection
+    const radioButtons = document.querySelectorAll('input[type="radio"][name="correctAnswer"]');
+    const optionGroups = document.querySelectorAll('.option-group');
+    
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Remove active class from all option groups
+            optionGroups.forEach(group => {
+                group.classList.remove('active');
+            });
+            
+            // Add active class to selected option group
+            this.closest('.option-group').classList.add('active');
+        });
+    });
+    
+    // Form validation
+    const form = document.querySelector('.practice-form');
+    form.addEventListener('submit', function(e) {
+        const question = document.getElementById('question').value.trim();
+        const option1 = document.getElementById('option1').value.trim();
+        const option2 = document.getElementById('option2').value.trim();
+        const option3 = document.getElementById('option3').value.trim();
+        const option4 = document.getElementById('option4').value.trim();
+        const correctAnswer = document.querySelector('input[name="correctAnswer"]:checked');
+        
+        if (!question || !option1 || !option2 || !option3 || !option4 || !correctAnswer) {
+            e.preventDefault();
+            alert('Please fill in all fields and select the correct answer.');
+            return;
+        }
+        
+        // Check for duplicate options
+        const options = [option1, option2, option3, option4];
+        const uniqueOptions = [...new Set(options)];
+        
+        if (options.length !== uniqueOptions.length) {
+            e.preventDefault();
+            alert('Please ensure all answer options are unique.');
+            return;
+        }
+    });
+    
+    // Auto-resize textarea
+    const textarea = document.getElementById('question');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+});
+</script>
+
+<%- include('../../partials/footer') %>

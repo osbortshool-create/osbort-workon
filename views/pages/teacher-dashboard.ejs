@@ -1,0 +1,146 @@
+<%- include('../partials/header') %>
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Teacher Dashboard</h1>
+        <div class="session-info">
+            <% if (locals.currentSession) { %>
+                <span class="session-badge">
+                    <%= currentSession.sessionName %> - <%= currentSession.currentTerm %>
+                </span>
+            <% } %>
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-school"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.assignedClasses : 0 %></h3>
+                <p>Assigned Classes</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.assignedSubjects : 0 %></h3>
+                <p>Assigned Subjects</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.studentsInClasses : 0 %></h3>
+                <p>Students in My Classes</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.resultsEntered : 0 %></h3>
+                <p>Results Entered</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3><%= locals.stats ? stats.pendingResults : 0 %></h3>
+                <p>Pending Approval</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-content">
+        <div class="dashboard-section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <a href="/teacher/results" class="action-card">
+                    <i class="fas fa-edit"></i>
+                    <span>Enter Results</span>
+                </a>
+                <a href="/teacher/my-results" class="action-card">
+                    <i class="fas fa-list"></i>
+                    <span>View My Results</span>
+                </a>
+                <a href="/teacher/classes" class="action-card">
+                    <i class="fas fa-users"></i>
+                    <span>My Classes</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2>My Assignments</h2>
+            <div class="assignments">
+                <div class="assignment-group">
+                    <h3>Assigned Classes</h3>
+                    <div class="assignment-list">
+                        <% if (user.assignedClasses && user.assignedClasses.length > 0) { %>
+                            <% user.assignedClasses.forEach(className => { %>
+                                <span class="assignment-badge"><%= className %></span>
+                            <% }) %>
+                        <% } else { %>
+                            <p>No classes assigned</p>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <div class="assignment-group">
+                    <h3>Assigned Subjects</h3>
+                    <div class="assignment-list">
+                        <% if (user.assignedSubjects && user.assignedSubjects.length > 0) { %>
+                            <% user.assignedSubjects.forEach(subject => { %>
+                                <span class="assignment-badge"><%= subject %></span>
+                            <% }) %>
+                        <% } else { %>
+                            <p>No subjects assigned</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2>Recent Results</h2>
+            <div class="recent-results">
+                <% if (locals.stats && stats.recentResults && stats.recentResults.length > 0) { %>
+                    <% stats.recentResults.forEach(result => { %>
+                        <div class="result-item">
+                            <div class="result-student">
+                                <strong><%= result.studentName %></strong>
+                                <small><%= result.className %></small>
+                            </div>
+                            <div class="result-subject">
+                                <%= result.subject %>
+                            </div>
+                            <div class="result-score">
+                                <%= result.total %>/100 (<%= result.grade %>)
+                            </div>
+                            <div class="result-date">
+                                <%= new Date(result.enteredAt).toLocaleDateString() %>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p>No results entered yet</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

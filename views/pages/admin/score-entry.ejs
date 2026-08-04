@@ -1,0 +1,641 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Score Entry</h1>
+        <% if (activeSession) { %>
+            <div class="session-info">
+                <span class="session-badge">
+                    <%= activeSession.sessionName %> - <%= activeSession.currentTerm %>
+                </span>
+            </div>
+        <% } %>
+    </div>
+    
+    <div class="result-entry-container">
+        <div class="filters">
+            <form method="GET" action="/admin/score-entry" class="filter-form">
+                <div class="filter-group">
+                    <label for="class">Class:</label>
+                    <select id="class" name="class" required>
+                        <option value="">Select Class</option>
+                        <% classes.forEach(cls => { %>
+                            <option value="<%= cls.className %>" <%= selectedClass === cls.className ? 'selected' : '' %>>
+                                <%= cls.className %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="subject">Subject:</label>
+                    <select id="subject" name="subject" required>
+                        <option value="">Select Subject</option>
+                        <% subjects.forEach(subject => { %>
+                            <option value="<%= subject.subjectName %>" <%= selectedSubject === subject.subjectName ? 'selected' : '' %>>
+                                <%= subject.subjectName %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="term">Term:</label>
+                    <select id="term" name="term" required>
+                        <option value="First Term" <%= selectedTerm === 'First Term' ? 'selected' : '' %>>First Term</option>
+                        <option value="Second Term" <%= selectedTerm === 'Second Term' ? 'selected' : '' %>>Second Term</option>
+                        <option value="Third Term" <%= selectedTerm === 'Third Term' ? 'selected' : '' %>>Third Term</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Load Students</button>
+            </form>
+        </div>
+        
+        <div class="score-entry-summary">
+            <p><strong>Grades:</strong> <% if (selectedClass) { const selectedClassName = String(selectedClass || '').toLowerCase(); const primaryMode = /(?:^|\s)(nursery|creche|kg|kindergarten|toddler|basic|primary|pry|reception|grade|preparatory|playgroup)(?:\s|$)/.test(selectedClassName) || /^p\s*\d/.test(selectedClassName); %><% if (primaryMode) { %>A+(90-100) | A(80-89) | B+(75-79) | B(70-74) | C+(65-69) | C(60-64) | D+(55-59) | D(50-54) | E(40-49) | F(<40)<% } else { %>A1(75-100) | B2(70-74) | B3(65-69) | C4(60-64) | C5(55-59) | C6(50-54) | D7(45-49) | E8(40-44) | F9(0-39)<% } %><% } else { %>Select a class to view the grading scale.<% } %></p>
+            <a href="/admin/score-entry/progress?term=<%= encodeURIComponent(selectedTerm || (activeSession ? activeSession.currentTerm : 'First Term')) %>" class="btn btn-outline">
+                <i class="fas fa-chart-line"></i> View Class Progress
+            </a>
+        </div>
+
+        <% if (selectedClass && selectedSubject && students.length > 0) { %>
+            <%
+                const selectedClassName = String(selectedClass || '').toLowerCase();
+                const primaryMode = /(?:^|\s)(nursery|creche|kg|kindergarten|toddler|basic|primary|pry|reception|grade|preparatory|playgroup)(?:\s|$)/.test(selectedClassName) || /^p\s*\d/.test(selectedClassName);
+                const ca1Max = 40;
+                const examMax = 60;
+                const ca1Label = 'CA (40)';
+            %>
+            <div class="result-form-container">
+                <% if (isEditingDisabled) { %>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Results for this class, subject, and term have been approved and cannot be edited.
+                    </div>
+                    <% } else if (hasSentForApproval) { %>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            These results were previously sent for approval and are still editable as a draft. You can save additional changes and click "Send for Approval" again.
+                        </div>
+                    <% } %>
+
+                        <form id="resultForm" class="result-form">
+                            <input type="hidden" name="className" value="<%= selectedClass %>">
+                            <input type="hidden" name="subject" value="<%= selectedSubject %>">
+                            <input type="hidden" name="term" value="<%= selectedTerm %>">
+                            <input type="hidden" name="session" value="<%= activeSession ? activeSession.sessionName : '' %>">
+                            <input type="hidden" name="isPrimary" value="<%= primaryMode ? '1' : '0' %>">
+
+                            <div class="table-container">
+                                <table class="result-table">
+                                    <thead>
+                                        <tr>
+                                            <th>S/N</th>
+                                            <th>Student Name</th>
+                                            <th>Student ID</th>
+                                            <th><%= ca1Label %></th>
+                                            <th>Exam (60)</th>
+                                            <th>Total</th>
+                                            <th>Grade</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% students.forEach((student, index) => { %>
+                                            <% 
+                                                const existingResult = existingResults.find(r =>
+                                                    (r.studentRef && r.studentRef === (student._id ? student._id.toString() : '')) ||
+                                                    (r.studentID && (r.studentID === student.studentID || r.studentID === (student._id ? student._id.toString() : ''))) ||
+                                                    (r.studentName && r.studentName === student.fullName)
+                                                );
+                                                const ca1 = existingResult ? existingResult.ca1 : '';
+                                                const exam = existingResult ? existingResult.exam : '';
+                                                const total = (ca1 || 0) + (exam || 0);
+                                                
+                                                let grade = primaryMode ? 'F' : 'F9';
+                                                let remark = 'Fail';
+                                                if (primaryMode) {
+                                                    if (total >= 90) { grade = 'A+'; remark = 'Excellent'; }
+                                                    else if (total >= 80) { grade = 'A'; remark = 'Excellent'; }
+                                                    else if (total >= 75) { grade = 'B+'; remark = 'Very Good'; }
+                                                    else if (total >= 70) { grade = 'B'; remark = 'Very Good'; }
+                                                    else if (total >= 65) { grade = 'C+'; remark = 'Good'; }
+                                                    else if (total >= 60) { grade = 'C'; remark = 'Fairly Good'; }
+                                                    else if (total >= 55) { grade = 'D+'; remark = 'Fair / Average'; }
+                                                    else if (total >= 50) { grade = 'D'; remark = 'Fair / Average'; }
+                                                    else if (total >= 40) { grade = 'E'; remark = 'Average'; }
+                                                } else {
+                                                    if (total >= 75) { grade = 'A1'; remark = 'Excellent'; }
+                                                    else if (total >= 70) { grade = 'B2'; remark = 'Very Good'; }
+                                                    else if (total >= 65) { grade = 'B3'; remark = 'Good'; }
+                                                    else if (total >= 60) { grade = 'C4'; remark = 'Credit'; }
+                                                    else if (total >= 55) { grade = 'C5'; remark = 'Credit'; }
+                                                    else if (total >= 50) { grade = 'C6'; remark = 'Credit'; }
+                                                    else if (total >= 45) { grade = 'D7'; remark = 'Pass'; }
+                                                    else if (total >= 40) { grade = 'E8'; remark = 'Pass'; }
+                                                }
+                                            %>
+                                            <tr>
+                                                <td><%= index + 1 %></td>
+                                                <td><%= student.fullName %></td>
+                                                <td><%= student.studentID %></td>
+                                                <td>
+                                                    <input type="number" name="ca1_<%= index %>" min="0" max="<%= ca1Max %>" value="<%= ca1 %>" class="score-input" data-row="<%= index %>" <%= isEditingDisabled ? 'disabled' : '' %>>
+                                                    <input type="hidden" name="studentID_<%= index %>" value="<%= student.studentID %>">
+                                                    <input type="hidden" name="studentRef_<%= index %>" value="<%= student._id %>">
+                                                    <input type="hidden" name="studentName_<%= index %>" value="<%= student.fullName %>">
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="exam_<%= index %>" min="0" max="<%= examMax %>" value="<%= exam %>" class="score-input" data-row="<%= index %>" <%= isEditingDisabled ? 'disabled' : '' %>>
+                                                </td>
+                                                <td>
+                                                    <span class="total-score" data-row="<%= index %>"><%= total %></span>
+                                                </td>
+                                                <td>
+                                                    <span class="grade-display" data-row="<%= index %>"><%= grade %></span>
+                                                </td>
+                                                <td>
+                                                    <span class="remark-display" data-row="<%= index %>"><%= remark %></span>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <% if (isEditingDisabled) { %>
+                                    <button type="button" id="reopenResults" class="btn btn-warning">
+                                        <i class="fas fa-undo"></i> Revoke / Reopen for Editing
+                                    </button>
+                                <% } else { %>
+                                    <button type="button" id="saveResults" class="btn btn-secondary">
+                                        <i class="fas fa-save"></i> Save as Draft
+                                    </button>
+                                    <button type="button" id="sendResults" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> Send for Approval
+                                    </button>
+                                    <button type="button" id="sendAllResults" class="btn btn-primary" style="background-color: #0f766e; border-color: #0f766e;">
+                                        <i class="fas fa-paper-plane"></i> Send Full Class for Approval
+                                    </button>
+                                    <button type="button" id="calculateAll" class="btn btn-outline">
+                                        <i class="fas fa-calculator"></i> Recalculate All
+                                    </button>
+                                <% } %>
+                            </div>
+                        </form>
+            </div>
+        <% } else if (selectedClass && selectedSubject) { %>
+            <div class="no-students">
+                <p>No students found in <%= selectedClass %></p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.score-entry-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 0 0 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.score-entry-summary p {
+    margin: 0;
+    color: #334155;
+}
+
+.result-form-container {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    margin-top: 1.5rem;
+}
+
+.filters {
+    margin-bottom: 1.5rem;
+}
+
+.filters .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    background: #fff;
+    padding: 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.filter-group {
+    min-width: 220px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.filter-group select {
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.result-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1100px;
+}
+
+.result-table th,
+.result-table td {
+    padding: 0.9rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.result-table th {
+    background: #f8fafc;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.result-table tr:hover {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.result-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.grading-info {
+    background: var(--light-gray);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin: 1rem 0;
+    border-left: #1e293b 4px solid;
+    border-right: #1e293b 4px solid;
+}
+
+.grading-info h4 {
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.grading-info p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+}
+
+.score-input {
+    width: 70px;
+    padding: 0.25rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: 0.25rem;
+    text-align: center;
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.total-score,
+.grade-display,
+.remark-display {
+    font-weight: bold;
+    color: #1e293b;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--medium-gray);
+}
+</style>
+
+<script>
+// Auto-calculate totals and grades with new grading system
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreInputs = document.querySelectorAll('.score-input');
+    const saveButton = document.getElementById('saveResults');
+    const sendButton = document.getElementById('sendResults');
+    const sendAllButton = document.getElementById('sendAllResults');
+    const calculateAllButton = document.getElementById('calculateAll');
+    const reopenButton = document.getElementById('reopenResults');
+    const classSelect = document.getElementById('class');
+    const subjectSelect = document.getElementById('subject');
+    
+    // Load subjects when class changes
+    classSelect.addEventListener('change', function() {
+        const className = this.value;
+        subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        
+        if (className) {
+            fetch(`/admin/api/classes/${encodeURIComponent(className)}/subjects`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.subjects.forEach(subject => {
+                            const option = document.createElement('option');
+                            option.value = subject.subjectName;
+                            option.textContent = subject.subjectName;
+                            subjectSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading subjects:', error);
+                });
+        }
+    });
+    
+    // Calculate total, grade, and remark for a specific row - NEW GRADING SYSTEM
+    function calculateRow(rowIndex) {
+        const ca1 = parseFloat(document.querySelector(`input[name="ca1_${rowIndex}"]`).value) || 0;
+        const exam = parseFloat(document.querySelector(`input[name="exam_${rowIndex}"]`).value) || 0;
+        
+        const total = ca1 + exam;
+        const isPrimary = document.querySelector('input[name="isPrimary"]')?.value === '1';
+        let grade = isPrimary ? 'F' : 'F9';
+        let remark = 'Fail';
+        
+        if (isPrimary) {
+            if (total >= 90) { grade = 'A+'; remark = 'Excellent'; }
+            else if (total >= 80) { grade = 'A'; remark = 'Excellent'; }
+            else if (total >= 75) { grade = 'B+'; remark = 'Very Good'; }
+            else if (total >= 70) { grade = 'B'; remark = 'Good'; }
+            else if (total >= 65) { grade = 'C+'; remark = 'Good'; }
+            else if (total >= 60) { grade = 'C'; remark = 'Credit'; }
+            else if (total >= 55) { grade = 'D+'; remark = 'Credit'; }
+            else if (total >= 50) { grade = 'D'; remark = 'Pass'; }
+            else if (total >= 40) { grade = 'E'; remark = 'Pass'; }
+        } else {
+            if (total >= 75) { grade = 'A1'; remark = 'Excellent'; }
+            else if (total >= 70) { grade = 'B2'; remark = 'Very Good'; }
+            else if (total >= 65) { grade = 'B3'; remark = 'Good'; }
+            else if (total >= 60) { grade = 'C4'; remark = 'Credit'; }
+            else if (total >= 55) { grade = 'C5'; remark = 'Credit'; }
+            else if (total >= 50) { grade = 'C6'; remark = 'Credit'; }
+            else if (total >= 45) { grade = 'D7'; remark = 'Pass'; }
+            else if (total >= 40) { grade = 'E8'; remark = 'Pass'; }
+        }
+        
+        document.querySelector(`span[data-row="${rowIndex}"].total-score`).textContent = total;
+        document.querySelector(`span[data-row="${rowIndex}"].grade-display`).textContent = grade;
+        document.querySelector(`span[data-row="${rowIndex}"].remark-display`).textContent = remark;
+    }
+    
+    // Add event listeners to score inputs
+    scoreInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const rowIndex = this.dataset.row;
+            calculateRow(rowIndex);
+        });
+    });
+    
+    // Calculate all rows
+    if (calculateAllButton) {
+        calculateAllButton.addEventListener('click', function() {
+            const rows = document.querySelectorAll('.score-input[name*="ca1_"]');
+            rows.forEach((input, index) => {
+                calculateRow(index);
+            });
+        });
+    }
+    
+    // Save results as draft
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            saveResults('draft');
+        });
+    }
+    
+    // Send results for approval
+    if (sendButton) {
+        sendButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to send these results for approval? You will not be able to edit them after sending.')) {
+                sendResults();
+            }
+        });
+    }
+
+    if (sendAllButton) {
+        sendAllButton.addEventListener('click', function() {
+            if (confirm('Send all draft subject scores for this class for the selected term and session for approval?')) {
+                sendClassResults();
+            }
+        });
+    }
+
+    if (reopenButton) {
+        reopenButton.addEventListener('click', async function() {
+            if (!confirm('Revoke this approved/published result set so it can be edited again?')) {
+                return;
+            }
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Revoking...';
+
+            try {
+                const response = await fetch('/admin/score-entry/revoke', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        className: document.querySelector('input[name="className"]')?.value || '',
+                        subject: document.querySelector('input[name="subject"]')?.value || '',
+                        term: document.querySelector('input[name="term"]')?.value || '',
+                        session: document.querySelector('input[name="session"]')?.value || ''
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-undo"></i> Revoke / Reopen for Editing';
+                    showAlert('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error revoking results:', error);
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-undo"></i> Revoke / Reopen for Editing';
+                showAlert('Error revoking results', 'error');
+            }
+        });
+    }
+    
+    function collectResults() {
+        const formData = new FormData(document.getElementById('resultForm'));
+        const results = [];
+
+        const studentIds = document.querySelectorAll('input[name*="studentID_"]');
+        studentIds.forEach((input, index) => {
+            const studentID = input.value;
+            const studentRef = document.querySelector(`input[name="studentRef_${index}"]`)?.value || '';
+            const studentName = document.querySelector(`input[name="studentName_${index}"]`).value;
+            const ca1 = document.querySelector(`input[name="ca1_${index}"]`).value;
+            const exam = document.querySelector(`input[name="exam_${index}"]`).value;
+
+            if (ca1 || exam) {
+                results.push({
+                    studentID,
+                    studentRef,
+                    studentName,
+                    ca1: parseFloat(ca1) || 0,
+                    ca2: 0,
+                    exam: parseFloat(exam) || 0
+                });
+            }
+        });
+
+        return {
+            className: formData.get('className'),
+            subject: formData.get('subject'),
+            term: formData.get('term'),
+            session: formData.get('session'),
+            results
+        };
+    }
+
+    function saveResults(action = 'save') {
+        const payload = collectResults();
+
+        return fetch('/admin/score-entry/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+            } else {
+                showAlert('Error saving results: ' + data.message, 'error');
+            }
+            return data;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error saving results', 'error');
+            return { success: false, message: 'Failed to save scores' };
+        });
+    }
+    
+    async function sendResults() {
+        const payload = collectResults();
+
+        const saveResult = await saveResults();
+        if (!saveResult.success) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/score-entry/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...payload,
+                    results: payload.results
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(data.message + '. Results are now available for approval.', 'success');
+            } else {
+                showAlert('Error sending results: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error sending results', 'error');
+        }
+    }
+
+    async function sendClassResults() {
+        const payload = collectResults();
+
+        const saveResult = await saveResults();
+        if (!saveResult.success) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/score-entry/send-class', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    className: payload.className,
+                    term: payload.term,
+                    session: payload.session,
+                    subject: payload.subject,
+                    results: payload.results
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(data.message, 'success');
+            } else {
+                showAlert('Error sending class results: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error sending class results', 'error');
+        }
+    }
+    
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            ${message}
+        `;
+        
+        const pageContent = document.querySelector('.page-content');
+        pageContent.insertBefore(alert, pageContent.firstChild);
+        
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    }
+});
+</script>
+
+<%- include('../../partials/footer') %>

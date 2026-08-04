@@ -1,0 +1,272 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Enter Results</h1>
+    </div>
+    
+    <div class="result-entry-container">
+        <div class="filters">
+            <form method="GET" action="/teacher/results" class="filter-form">
+                <div class="filter-group">
+                    <label for="class">Class:</label>
+                    <select id="class" name="class" required>
+                        <option value="">Select Class</option>
+                        <% assignedClasses.forEach(className => { %>
+                            <option value="<%= className %>" <%= selectedClass === className ? 'selected' : '' %>>
+                                <%= className %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="subject">Subject:</label>
+                    <select id="subject" name="subject" required>
+                        <option value="">Select Subject</option>
+                        <% assignedSubjects.forEach(subject => { %>
+                            <option value="<%= subject %>" <%= selectedSubject === subject ? 'selected' : '' %>>
+                                <%= subject %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="term">Term:</label>
+                    <select id="term" name="term" required>
+                        <option value="First Term" <%= selectedTerm === 'First Term' ? 'selected' : '' %>>First Term</option>
+                        <option value="Second Term" <%= selectedTerm === 'Second Term' ? 'selected' : '' %>>Second Term</option>
+                        <option value="Third Term" <%= selectedTerm === 'Third Term' ? 'selected' : '' %>>Third Term</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Load Students</button>
+            </form>
+        </div>
+        
+        <% if (selectedClass && selectedSubject && students.length > 0) { %>
+            <div class="result-form-container">
+                <div class="result-header">
+                    <h2><%= selectedClass %> - <%= selectedSubject %></h2>
+                    <p><%= selectedTerm %>, <%= activeSession ? activeSession.sessionName : '' %></p>
+                </div>
+                
+                <form id="resultForm" class="result-form">
+                    <input type="hidden" name="className" value="<%= selectedClass %>">
+                    <input type="hidden" name="subject" value="<%= selectedSubject %>">
+                    <input type="hidden" name="term" value="<%= selectedTerm %>">
+                    <input type="hidden" name="session" value="<%= activeSession ? activeSession.sessionName : '' %>">
+                    <input type="hidden" name="isPrimary" value="<%= isPrimary ? '1' : '0' %>">
+                    
+                    <div class="table-container">
+                        <table class="result-table">
+                            <thead>
+                                <tr>
+                                    <th>S/N</th>
+                                    <th>Student Name</th>
+                                    <th>Student ID</th>
+                                    <th>CA (40)</th>
+                                    <th>Exam (60)</th>
+                                    <th>Total</th>
+                                    <th>Grade</th>
+                                    <th>Remark</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% students.forEach((student, index) => { %>
+                                    <% 
+                                        const existingResult = existingResults.find(r =>
+                                            r.studentID === student.studentID ||
+                                            r.studentID === (student._id ? student._id.toString() : '') ||
+                                            r.studentName === student.fullName
+                                        );
+                                        const ca1 = existingResult ? existingResult.ca1 : 0;
+                                        const exam = existingResult ? existingResult.exam : 0;
+                                        const total = ca1 + exam;
+                                        let grade = 'F9';
+                                        let remark = 'Fail';
+                                        if (isPrimary) {
+                                            if (total >= 90) { grade = 'A+'; remark = 'Excellent'; }
+                                            else if (total >= 80) { grade = 'A'; remark = 'Excellent'; }
+                                            else if (total >= 75) { grade = 'B+'; remark = 'Very Good'; }
+                                            else if (total >= 70) { grade = 'B'; remark = 'Very Good'; }
+                                            else if (total >= 65) { grade = 'C+'; remark = 'Good'; }
+                                            else if (total >= 60) { grade = 'C'; remark = 'Fairly Good'; }
+                                            else if (total >= 55) { grade = 'D+'; remark = 'Fair / Average'; }
+                                            else if (total >= 50) { grade = 'D'; remark = 'Fair / Average'; }
+                                            else if (total >= 40) { grade = 'E'; remark = 'Average'; }
+                                        } else {
+                                            if (total >= 75) { grade = 'A1'; remark = 'Excellent'; }
+                                            else if (total >= 70) { grade = 'B2'; remark = 'Very Good'; }
+                                            else if (total >= 65) { grade = 'B3'; remark = 'Good'; }
+                                            else if (total >= 60) { grade = 'C4'; remark = 'Credit'; }
+                                            else if (total >= 55) { grade = 'C5'; remark = 'Credit'; }
+                                            else if (total >= 50) { grade = 'C6'; remark = 'Credit'; }
+                                            else if (total >= 45) { grade = 'D7'; remark = 'Pass'; }
+                                            else if (total >= 40) { grade = 'E8'; remark = 'Pass'; }
+                                        }
+                                    %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= student.fullName %></td>
+                                        <td><%= student.studentID %></td>
+                                        <td>
+                                            <input type="number" name="ca1_<%= index %>" min="0" max="40" value="<%= ca1 %>" class="score-input" data-row="<%= index %>">
+                                            <input type="hidden" name="studentID_<%= index %>" value="<%= student.studentID %>">
+                                            <input type="hidden" name="studentName_<%= index %>" value="<%= student.fullName %>">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="exam_<%= index %>" min="0" max="60" value="<%= exam %>" class="score-input" data-row="<%= index %>">
+                                        </td>
+                                        <td>
+                                            <span class="total-score" data-row="<%= index %>"><%= total %></span>
+                                        </td>
+                                        <td>
+                                            <span class="grade-display" data-row="<%= index %>"><%= grade %></span>
+                                        </td>
+                                        <td>
+                                            <span class="remark-display" data-row="<%= index %>"><%= remark %></span>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="saveResults" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Results
+                        </button>
+                        <button type="button" id="calculateAll" class="btn btn-secondary">
+                            <i class="fas fa-calculator"></i> Recalculate All
+                        </button>
+                    </div>
+                </form>
+            </div>
+        <% } else if (selectedClass && selectedSubject) { %>
+            <div class="no-students">
+                <p>No students found in <%= selectedClass %></p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script>
+// Auto-calculate totals and grades
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreInputs = document.querySelectorAll('.score-input');
+    const saveButton = document.getElementById('saveResults');
+    const calculateAllButton = document.getElementById('calculateAll');
+    const classSelect = document.getElementById('class');
+    const subjectSelect = document.getElementById('subject');
+    const termSelect = document.getElementById('term');
+    
+    // Calculate total and grade for a specific row
+    function calculateRow(rowIndex) {
+        const ca1 = parseFloat(document.querySelector(`input[name="ca1_${rowIndex}"]`).value) || 0;
+        const exam = parseFloat(document.querySelector(`input[name="exam_${rowIndex}"]`).value) || 0;
+        const isPrimary = document.querySelector('input[name="isPrimary"]')?.value === '1';
+        
+        const total = ca1 + exam;
+        let grade = isPrimary ? 'F' : 'F9';
+        let remark = isPrimary ? 'Weak' : 'Fail';
+        
+        if (isPrimary) {
+            if (total >= 90) { grade = 'A+'; remark = 'Excellent'; }
+            else if (total >= 80) { grade = 'A'; remark = 'Excellent'; }
+            else if (total >= 75) { grade = 'B+'; remark = 'Very Good'; }
+            else if (total >= 70) { grade = 'B'; remark = 'Very Good'; }
+            else if (total >= 65) { grade = 'C+'; remark = 'Good'; }
+            else if (total >= 60) { grade = 'C'; remark = 'Fairly Good'; }
+            else if (total >= 55) { grade = 'D+'; remark = 'Fair / Average'; }
+            else if (total >= 50) { grade = 'D'; remark = 'Fair / Average'; }
+            else if (total >= 40) { grade = 'E'; remark = 'Average'; }
+        } else {
+            if (total >= 75) { grade = 'A1'; remark = 'Excellent'; }
+            else if (total >= 70) { grade = 'B2'; remark = 'Very Good'; }
+            else if (total >= 65) { grade = 'B3'; remark = 'Good'; }
+            else if (total >= 60) { grade = 'C4'; remark = 'Credit'; }
+            else if (total >= 55) { grade = 'C5'; remark = 'Credit'; }
+            else if (total >= 50) { grade = 'C6'; remark = 'Credit'; }
+            else if (total >= 45) { grade = 'D7'; remark = 'Pass'; }
+            else if (total >= 40) { grade = 'E8'; remark = 'Pass'; }
+        }
+        
+        document.querySelector(`span[data-row="${rowIndex}"].total-score`).textContent = total;
+        document.querySelector(`span[data-row="${rowIndex}"].grade-display`).textContent = grade;
+        document.querySelector(`span[data-row="${rowIndex}"].remark-display`).textContent = remark;
+    }
+    
+    // Add event listeners to score inputs
+    scoreInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const rowIndex = this.dataset.row;
+            calculateRow(rowIndex);
+        });
+    });
+    
+    // Calculate all rows
+    calculateAllButton.addEventListener('click', function() {
+        const rows = document.querySelectorAll('.score-input[name*="ca1_"]');
+        rows.forEach((input, index) => {
+            calculateRow(index);
+        });
+    });
+    
+
+    // Save results
+    saveButton.addEventListener('click', function() {
+        const formData = new FormData(document.getElementById('resultForm'));
+        const results = [];
+        
+        const studentIds = document.querySelectorAll('input[name*="studentID_"]');
+        studentIds.forEach((input, index) => {
+            const studentID = input.value;
+            const studentRef = document.querySelector(`input[name="studentRef_${index}"]`)?.value || '';
+            const studentName = document.querySelector(`input[name="studentName_${index}"]`).value;
+            const ca1 = document.querySelector(`input[name="ca1_${index}"]`).value;
+            const exam = document.querySelector(`input[name="exam_${index}"]`).value;
+            
+            if (ca1 || exam) {
+                results.push({
+                    studentID,
+                    studentRef,
+                    studentName,
+                    ca1: parseFloat(ca1) || 0,
+                    ca2: 0,
+                    exam: parseFloat(exam) || 0
+                });
+            }
+        });
+        
+        fetch('/teacher/results/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                className: formData.get('className'),
+                subject: formData.get('subject'),
+                term: formData.get('term'),
+                session: formData.get('session'),
+                results: results
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Results saved successfully!');
+            } else {
+                alert('Error saving results: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving results');
+        });
+    });
+});
+</script>
+
+<%- include('../../partials/footer') %>

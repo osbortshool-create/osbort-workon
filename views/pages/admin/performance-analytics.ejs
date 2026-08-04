@@ -1,0 +1,1060 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Performance Analytics</h1>
+        <% if (activeSession) { %>
+            <div class="session-info" style="justify-self: end;display: flex;">
+                <span class="session-badge">
+                    <%= activeSession.sessionName %> - <%= activeSession.currentTerm %>
+                </span>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="analytics-overview" style="margin-top: 10px;">
+        <div class="overview-card card-gold">
+            <div class="card-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="card-content">
+                <h3><%= overallTopStudents.length %></h3>
+                <p>Top Performers</p>
+            </div>
+        </div>
+
+        <div class="overview-card card-blue">
+            <div class="card-icon">
+                <i class="fas fa-school"></i>
+            </div>
+            <div class="card-content">
+                <h3><%= classPerformance.length %></h3>
+                <p>Active Classes</p>
+            </div>
+        </div>
+
+        <div class="overview-card card-green">
+            <div class="card-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="card-content">
+                <h3><%= subjectPerformance.length %></h3>
+                <p>Subjects Analyzed</p>
+            </div>
+        </div>
+
+        <div class="overview-card card-purple">
+            <div class="card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="card-content">
+                <h3><%= classPerformance.length > 0 ? Math.round(classPerformance.reduce((sum, cls) => sum + cls.averageScore, 0) / classPerformance.length) : 0 %>%</h3>
+                <p>School Average</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-wrapper">
+        <div class="charts-container">
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <h3 class="chart-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Top 5 Students by Term
+                        </h3>
+                        <p class="chart-subtitle">Interactive term-based performance analysis</p>
+                    </div>
+                    <div class="term-selector">
+                        <button class="term-btn active" data-term="First Term">1st Term</button>
+                        <button class="term-btn" data-term="Second Term">2nd Term</button>
+                        <button class="term-btn" data-term="Third Term">3rd Term</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="termChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <h3 class="chart-title">
+                            <i class="fas fa-trophy"></i>
+                            Session Top Performers
+                        </h3>
+                        <p class="chart-subtitle">Overall academic excellence ranking</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="overallChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <h3 class="chart-title">
+                            <i class="fas fa-school"></i>
+                            Class Performance Matrix
+                        </h3>
+                        <p class="chart-subtitle">Comparative class analytics</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="classChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <h3 class="chart-title">
+                            <i class="fas fa-book"></i>
+                            Subject Performance Insights
+                        </h3>
+                        <p class="chart-subtitle">Multi-dimensional subject analysis</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tables-wrapper">
+        <div class="tables-container">
+            <div class="table-card">
+                <div class="card-header">
+                    <h3 class="table-title">
+                        <i class="fas fa-star"></i>
+                        Hall of Excellence
+                    </h3>
+                    <div class="table-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Student</th>
+                                <th>Class</th>
+                                <th>Average Score</th>
+                                <th>Subjects</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (overallTopStudents.length > 0) { %>
+                                <% overallTopStudents.forEach((student, index) => { %>
+                                    <tr>
+                                        <td>
+                                            <div class="rank-badge rank-<%= index + 1 %>">
+                                                <%= index + 1 %>
+                                            </div>
+                                        </td>
+                                        <td class="student-name"><%= student.studentName %></td>
+                                        <td>
+                                            <span class="class-badge"><%= student.className %></span>
+                                        </td>
+                                        <td>
+                                            <div class="score-display">
+                                                <span class="score-value"><%= Math.round(student.averageScore * 100) / 100 %>%</span>
+                                                <div class="score-bar">
+                                                    <div class="score-fill" style="width: <%= student.averageScore %>%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="subject-count"><%= student.totalSubjects %></td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="no-data">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>No performance data available</span>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="card-header">
+                    <h3 class="table-title">
+                        <i class="fas fa-school"></i>
+                        Class Performance Matrix
+                    </h3>
+                    <div class="table-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-filter"></i>
+                            Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Average Score</th>
+                                <th>Students</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (classPerformance.length > 0) { %>
+                                <% classPerformance.forEach(cls => { %>
+                                    <tr>
+                                        <td class="class-name"><%= cls._id %></td>
+                                        <td>
+                                            <div class="score-display">
+                                                <span class="score-value"><%= Math.round(cls.averageScore * 100) / 100 %>%</span>
+                                                <div class="score-bar">
+                                                    <div class="score-fill" style="width: <%= cls.averageScore %>%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="student-count"><%= cls.studentCount %></td>
+                                        <td>
+                                            <%
+                                                let level = 'Poor';
+                                                let levelClass = 'poor';
+                                                if (cls.averageScore >= 80) { level = 'Excellent'; levelClass = 'excellent'; }
+                                                else if (cls.averageScore >= 70) { level = 'Very Good'; levelClass = 'very-good'; }
+                                                else if (cls.averageScore >= 60) { level = 'Good'; levelClass = 'good'; }
+                                                else if (cls.averageScore >= 50) { level = 'Average'; levelClass = 'average'; }
+                                            %>
+                                            <span class="performance-badge <%= levelClass %>">
+                                                <%= level %>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" class="no-data">
+                                        <i class="fas fa-school"></i>
+                                        <span>No class performance data available</span>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.analytics-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.overview-card {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 2rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.overview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(30deg, transparent 48%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0.08) 51%, transparent 52%),
+        linear-gradient(150deg, transparent 48%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0.08) 51%, transparent 52%);
+    background-size: 40px 40px;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.overview-card.card-gold {
+    background: linear-gradient(135deg, #c9a961 0%, #a68649 100%);
+    color: #fff;
+}
+
+.overview-card.card-blue {
+    background: linear-gradient(135deg, #3d4d6b 0%, #2a3548 100%);
+    color: #fff;
+}
+
+.overview-card.card-green {
+    background: linear-gradient(135deg, #234d7f 0%, #172f52 100%);
+    color: #fff;
+}
+
+.overview-card.card-purple {
+    background: linear-gradient(135deg, #255f63 0%, #173a3d 100%);
+    color: #fff;
+}
+
+.card-icon {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.card-icon i {
+    color: #ffffff;
+    font-size: 32px;
+}
+
+.card-content {
+    position: relative;
+    z-index: 1;
+}
+
+.card-content h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0;
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.card-content p {
+    margin: 0;
+    color: #ffffff !important;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.charts-wrapper {
+    margin-bottom: 3rem;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+    min-width: 800px;
+}
+
+.card-header {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-subtitle {
+    color: #64748b;
+    margin: 0.5rem 0 0 0;
+    font-size: 0.875rem;
+}
+
+.term-selector {
+    display: flex;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.term-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.term-btn.active,
+.term-btn:hover {
+    background: #1e293b;
+    color: white;
+}
+
+.chart-container {
+    padding: 1.5rem;
+    height: 400px;
+    position: relative;
+}
+
+.tables-wrapper {
+    margin-bottom: 2rem;
+}
+
+.tables-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+.table-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+    min-width: 700px;
+}
+
+.table-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    padding: 0.5rem 1rem;
+    background: #1e293b;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.action-btn:hover {
+    background: #334155;
+    transform: translateY(-1px);
+}
+
+.table-container {
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.performance-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #1e293b;
+}
+
+.performance-table th {
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #374151;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.performance-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+}
+
+.performance-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.rank-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: white;
+}
+
+.rank-1 { background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #000; }
+.rank-2 { background: linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%); color: #000; }
+.rank-3 { background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%); }
+.rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.student-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.class-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.class-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.score-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.score-value {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+
+.score-bar {
+    width: 80px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 3px;
+    transition: width 0.8s ease;
+}
+
+.subject-count,
+.student-count {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.performance-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.performance-badge.excellent { background: #d1fae5; color: #065f46; }
+.performance-badge.very-good { background: #dbeafe; color: #1e40af; }
+.performance-badge.good { background: #fef3c7; color: #92400e; }
+.performance-badge.average { background: #fed7aa; color: #9a3412; }
+.performance-badge.poor { background: #fee2e2; color: #991b1b; }
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.no-data i {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+.charts-container::-webkit-scrollbar,
+.tables-container::-webkit-scrollbar,
+.table-container::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.charts-container::-webkit-scrollbar-track,
+.tables-container::-webkit-scrollbar-track,
+.table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.charts-container::-webkit-scrollbar-thumb,
+.tables-container::-webkit-scrollbar-thumb,
+.table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.charts-container::-webkit-scrollbar-thumb:hover,
+.tables-container::-webkit-scrollbar-thumb:hover,
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+@media (max-width: 768px) {
+    .analytics-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .overview-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .term-selector {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .chart-container {
+        height: 300px;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .analytics-overview {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    const colors = [
+        '#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe',
+        '#43e97b', '#38f9d7', '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3'
+    ];
+
+    let termChart, overallChart, classChart, subjectChart;
+
+    initializeTermChart('First Term');
+    initializeOverallChart();
+    initializeClassChart();
+    initializeSubjectChart();
+
+    document.querySelectorAll('.term-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.term-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const term = this.dataset.term;
+            updateTermChart(term);
+        });
+    });
+
+    function createGradient(ctx, color1, color2) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(1, color2);
+        return gradient;
+    }
+
+    function initializeTermChart(term) {
+        const ctx = document.getElementById('termChart').getContext('2d');
+        const data = getTermData(term);
+
+        if (termChart) {
+            termChart.destroy();
+        }
+
+        termChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Average Score (%)',
+                    data: data.scores,
+                    backgroundColor: colors.slice(0, data.labels.length),
+                    borderColor: colors.slice(0, data.labels.length),
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${Math.round(context.parsed.y * 100) / 100}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#f1f5f9',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateTermChart(term) {
+        const data = getTermData(term);
+
+        termChart.data.labels = data.labels;
+        termChart.data.datasets[0].data = data.scores;
+        termChart.data.datasets[0].backgroundColor = colors.slice(0, data.labels.length);
+        termChart.data.datasets[0].borderColor = colors.slice(0, data.labels.length);
+        termChart.update('active');
+    }
+
+    function getTermData(term) {
+        const termData = <%- JSON.stringify(termAnalytics) %>;
+        const students = termData[term] || [];
+
+        return {
+            labels: students.map(s => s.studentName),
+            scores: students.map(s => Math.round(s.averageScore * 100) / 100)
+        };
+    }
+
+    function initializeOverallChart() {
+        const ctx = document.getElementById('overallChart').getContext('2d');
+        const students = <%- JSON.stringify(overallTopStudents) %>;
+
+        overallChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: students.map(s => s.studentName),
+                datasets: [{
+                    data: students.map(s => Math.round(s.averageScore * 100) / 100),
+                    backgroundColor: colors.slice(0, students.length),
+                    borderColor: '#ffffff',
+                    borderWidth: 3,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                return data.labels.map((label, i) => ({
+                                    text: `${label} (${data.datasets[0].data[i]}%)`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    strokeStyle: data.datasets[0].backgroundColor[i],
+                                    pointStyle: 'circle'
+                                }));
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed}%`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    duration: 1200
+                }
+            }
+        });
+    }
+
+    function initializeClassChart() {
+        const ctx = document.getElementById('classChart').getContext('2d');
+        const classes = <%- JSON.stringify(classPerformance) %>;
+
+        classChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: classes.map(c => c._id),
+                datasets: [{
+                    label: 'Average Score (%)',
+                    data: classes.map(c => Math.round(c.averageScore * 100) / 100),
+                    borderColor: '#667eea',
+                    backgroundColor: createGradient(ctx, '#667eea20', '#667eea05'),
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#667eea',
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: '#667eea',
+                    pointHoverBorderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return `Average: ${context.parsed.y}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#f1f5f9',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+
+    function initializeSubjectChart() {
+        const ctx = document.getElementById('subjectChart').getContext('2d');
+        const subjects = <%- JSON.stringify(subjectPerformance) %>;
+
+        subjectChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: subjects.map(s => s._id),
+                datasets: [
+                    {
+                        label: 'Average Score (%)',
+                        data: subjects.map(s => Math.round(s.averageScore * 100) / 100),
+                        backgroundColor: '#667eea',
+                        borderColor: '#667eea',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Pass Rate (%)',
+                        data: subjects.map(s => Math.round(s.passRate * 10000) / 100),
+                        backgroundColor: '#764ba2',
+                        borderColor: '#764ba2',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#f1f5f9',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+});
+</script>
+
+<%- include('../../partials/footer') %>

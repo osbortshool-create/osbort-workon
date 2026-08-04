@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+    <!-- <meta name="description" content=""> -->
+
+    <!-- <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:title" content="">
+    <meta property="og:description" content="">
+    <meta property="og:image" content=""> -->
+    <style>
+        /* Landing Page Specific Styles */
+        .landing-page {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #ffffff;
+            color: #333;
+        }
+
+        /* Reset any inherited styles */
+        .landing-page * {
+            box-sizing: border-box;
+        }
+
+        /* Top Tiny Nav - Enhanced */
+        .top-tiny-nav {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 0rem 0;
+            font-size: 0.875rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .top-tiny-nav::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        .top-tiny-nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .top-tiny-nav .phone {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .top-tiny-nav .phone:hover {
+            transform: translateX(5px);
+            color: #1e293b;
+        }
+
+        .top-tiny-nav .social-icons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .top-tiny-nav .social-icons a {
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .top-tiny-nav .social-icons a::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(56, 189, 248, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .top-tiny-nav .social-icons a:hover::before {
+            width: 40px;
+            height: 40px;
+        }
+
+        .top-tiny-nav .social-icons a:hover {
+            color: #1e293b;
+            transform: translateY(-2px) scale(1.1);
+        }
+
+        /* Main Top Bar - Enhanced */
+        .main-top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 0.5rem 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .main-top-bar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .main-top-bar .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .main-top-bar .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .main-top-bar .logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .main-top-bar .logo img:hover {
+            transform: rotate(360deg);
+            box-shadow: 0 12px 35px rgba(56, 189, 248, 0.3);
+        }
+
+        .main-top-bar .logo h1 {
+            font-size: 1.8rem;
+            color: #1e293b;
+            margin: 0;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1e293b 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+
+        .main-top-bar .contact-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .main-top-bar .contact-btn {
+            background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+            color: white;
+            padding: 0.875rem 1.75rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-top-bar .contact-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .main-top-bar .contact-btn:hover::before {
+            left: 100%;
+        }
+
+        .main-top-bar .contact-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Sticky Navigation - FIXED */
+        .sticky-nav {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .sticky-nav .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 0.5rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sticky-nav ul {
+            display: flex;
+            list-style: none;
+            gap: 0;
+            margin: 0;
+            padding: 0;
+            justify-content: center;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .sticky-nav ul::-webkit-scrollbar {
+            display: none;
+        }
+
+        .sticky-nav li {
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .sticky-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            display: block;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sticky-nav a::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+            transition: width 0.3s ease;
+        }
+
+        .sticky-nav a:hover::before {
+            width: 100%;
+        }
+
+        .sticky-nav a:hover {
+            background: rgba(56, 189, 248, 0.1);
+            transform: translateY(-2px);
+            color: #38bdf8;
+        }
+
+        /* Mobile Navigation Toggle */
+        .mobile-nav-toggle {
+            display: none;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+        }
+
+        /* Hero Section - Enhanced */
+        .hero-section {
+            position: relative;
+            height: 70vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-carousel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hero-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 2.5s ease-in-out;
+            transform: scale(1.1);
+        }
+
+        .hero-slide.active {
+            opacity: 2;
+            transform: scale(1);
+        }
+
+        .hero-slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: white;
+            max-width: 900px;
+            padding: 2rem;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            animation: heroTextSlide 1.5s ease-out;
+            background: linear-gradient(135deg, #ffffff , white 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-bottom: 2.5rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            animation: heroTextSlide 1.5s ease-out 0.3s both;
+            opacity: 0.95;
+        }
+
+        .hero-cta {
+            animation: heroTextSlide 1.5s ease-out 0.6s both;
+        }
+
+        .hero-cta .btn {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 1.25rem 2.5rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.4s ease;
+            box-shadow: 0 8px 30px rgba(56, 189, 248, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-cta .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .hero-cta .btn:hover::before {
+            left: 100%;
+        }
+
+        .hero-cta .btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(56, 189, 248, 0.5);
+        }
+
+        /* Floating Elements */
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-element {
+            position: absolute;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-element:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .floating-element:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .floating-element:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 30%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        /* Animations */
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes textGlow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.2); }
+        }
+
+        @keyframes heroTextSlide {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .top-tiny-nav .container {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.4rem 0.75rem;
+            }
+            .top-tiny-nav .phone {
+                font-size: 0.75rem;
+            }
+            .contact-btn {
+                display: none;
+            }
+
+            /* --- Main top bar: single tight row on mobile --- */
+            .main-top-bar {
+                padding: 0.4rem 0;
+            }
+            .main-top-bar .container {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.6rem;
+                padding: 0 0.75rem;
+            }
+            .main-top-bar .logo {
+                flex: 1;
+                gap: 0.5rem;
+                min-width: 0;
+            }
+            .main-top-bar .logo img {
+                width: 36px;
+                height: 36px;
+                flex-shrink: 0;
+            }
+            .main-top-bar .logo h1 {
+                font-size: 0.8rem;
+                font-weight: 700;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 1.2;
+            }
+            .main-top-bar .contact-actions {
+                display: none;
+            }
+            .main-top-bar .mobile-nav-toggle {
+                display: flex;
+                flex-shrink: 0;
+            }
+
+            .sticky-nav .container {
+                justify-content: flex-start;
+                padding: 0 0.75rem;
+            }
+
+            .sticky-nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: calc(100% + 2px);
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                z-index: 1000;
+            }
+
+            .sticky-nav ul.active {
+                display: flex;
+            }
+
+            .mobile-nav-toggle {
+                display: block;
+            }
+
+            .sticky-nav a {
+                text-align: center;
+                padding: 0.75rem 1rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .hero-content h1 {
+                font-size: 1.6rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .hero-content p {
+                font-size: 0.95rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .hero-cta .btn {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-top-bar .logo h1 {
+                font-size: 0.72rem;
+            }
+            .main-top-bar .logo img {
+                width: 32px;
+                height: 32px;
+            }
+            .hero-content h1 {
+                font-size: 1.35rem;
+            }
+
+            .hero-content p {
+                font-size: 0.85rem;
+            }
+
+            .hero-cta .btn {
+                padding: 0.65rem 1.2rem;
+                font-size: 0.85rem;
+            }
+        }
+        .admission-section {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: #fff;
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.admission-section h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.admission-text p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+  line-height: 1.7;
+}
+
+.admission-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #1e293b;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #f1f5f9;
+}
+
+.btn-outline {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+    </style>
+</head>
+<body class="landing-page">
+    <!-- Top Tiny Nav -->
+    <div class="top-tiny-nav">
+        <div class="container">
+            <div class="phone">
+                <i class="fas fa-phone"></i>
+                <span><%= school && school.phone ? school.phone : '+234-XXX-XXX-XXXX' %></span>
+            </div>
+            <div class="social-icons">
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Top Bar -->
+    <div class="main-top-bar">
+        <div class="container">
+            <div class="logo">
+                <img src="<%= school && school.logo ? school.logo : '/images/default-logo.png' %>" alt="School Logo">
+                <h1><%= school ? school.name : 'Your School Name' %></h1>
+            </div>
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="contact-actions">
+                <a href="tel:<%= school && school.phone ? school.phone : '+234XXXXXXXXXX' %>" class="contact-btn">
+                    <i class="fas fa-phone"></i> Call Now
+                </a>
+                <a href="#contact" class="contact-btn">
+                    <i class="fas fa-map-marker-alt"></i> Our Location
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Navigation -->
+    <nav class="sticky-nav">
+        <div class="container">
+            <ul id="navMenu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#admission">Admission</a></li>
+                <li><a href="#facilities">Our Facilities</a></li>
+                <li><a href="/login">Portal/Admin</a></li>
+                <li><a href="#programme">Our Programme</a></li>
+                <li><a href="#staff">Our Staff</a></li>
+                <li><a href="#gallery">Events & Gallery</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="floating-elements">
+            <div class="floating-element"></div>
+            <div class="floating-element"></div>
+            <div class="floating-element"></div>
+        </div>
+        
+        <div class="hero-carousel">
+            <div class="hero-slide active" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://i.imgur.com/chfiJED.jpeg');">
+                <div class="hero-content">
+                    <h1>Welcome to <%= school ? school.name : 'Your School Name' %></h1>
+                    <p>Excellence in Education</p>
+                    <div class="hero-cta">
+                        <a href="/login" class="btn">
+                            <i class="fas fa-sign-in-alt"></i> Access Portal
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-slide" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://i.imgur.com/riRc33E.jpeg');">
+                <div class="hero-content">
+                    <h1>Where Future Leaders are Raised</h1>
+                    <p>Nurturing Excellence, Building Character</p>
+                    <div class="hero-cta">
+                        <a href="#about" class="btn">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-slide" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://i.imgur.com/f1FDVDs.jpeg');">
+                <div class="hero-content">
+                    <h1>Excellence in Academics & Morals</h1>
+                    <p>Preparing Students for Tomorrow's Challenges</p>
+                    <div class="hero-cta">
+                        <a href="#admission" class="btn">
+                            <i class="fas fa-graduation-cap"></i> Apply Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Safe Learning Environment Section -->
+    <section id="about" class="main-section">
+        <div class="section-content">
+            <h2>We Provide Safe & Conducive Learning Environment</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: center;">
+
+  <div>
+    <p style="font-size: 1.1rem; line-height: 1.8; color: #64748b; margin-bottom: 1.5rem;">
+      <%= school && school.about ? school.about : 'We are committed to providing quality education that prepares students for success in their academic and personal lives. Our dedicated faculty and modern facilities create an environment where every student can thrive.' %>
+    </p>
+
+    <% if (school && school.mission) { %>
+      <div style="background: #f8fafc; padding: 1.5rem; border-radius: 1rem; border-left: 4px solid #1e293b;border-right: 4px solid #1e293b;">
+        <h3 style="color: #1e293b; margin-bottom: 1rem;">Our Mission</h3>
+        <p style="color: #64748b; margin: 0;"><%= school.mission %></p>
+      </div>
+    <% } %>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; justify-items: center;">
+    <% const galleryImages = [
+      'https://i.imgur.com/orapxJg.jpeg',
+      'https://i.imgur.com/bvGpBIc.jpeg',
+      'https://i.imgur.com/riRc33E.jpeg',
+      'https://i.imgur.com/chfiJED.jpeg'
+    ]; %>
+    <% galleryImages.forEach((image, index) => { %>
+      <img 
+        src="<%= image %>" 
+        alt="Students Learning <%= index + 1 %>" 
+        style="
+          width: 100%; 
+          max-width: 250px; 
+          height: 170px; 
+          object-fit: cover; 
+          border-radius: 1rem; 
+          box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+          transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.8s ease;
+          opacity: 0;
+          animation: fadeInUp 0.6s ease forwards;"
+        onmouseover="this.style.transform='translateY(-5px) scale(1.02)'; this.style.boxShadow='0 15px 30px rgba(0,0,0,0.15)'"
+        onmouseout="this.style.transform='none'; this.style.boxShadow='0 20px 40px rgba(0,0,0,0.1)'"
+      >
+    <% }); %>
+  </div>
+
+</div>
+
+        </div>
+    </section>
+
+   
+
+    <!-- Facilities Section -->
+    <section id="facilities" class="main-section">
+        <div class="section-content">
+            <h2>A Glance Through Our Facilities</h2>
+            <div class="facilities-grid">
+                <div class="facility-card">
+                    <div class="facility-image" style="background-image: url('https://i.imgur.com/bvGpBIc.jpeg');"></div>
+                    <div class="facility-content">
+                        <h3>Modern Library</h3>
+                        <p>Well-stocked library with thousands of books, digital resources, and quiet study areas for research and learning.</p>
+                    </div>
+                </div>
+                <div class="facility-card">
+                    <div class="facility-image" style="background-image: url('https://i.imgur.com/orapxJg.jpeg');"></div>
+                    <div class="facility-content">
+                        <h3>Science Laboratories</h3>
+                        <p>Fully equipped laboratories for Physics, Chemistry, and Biology with modern equipment and safety measures.</p>
+                    </div>
+                </div>
+                <div class="facility-card">
+                    <div class="facility-image" style="background-image: url('https://i.imgur.com/riRc33E.jpeg');"></div>
+                    <div class="facility-content">
+                        <h3>Computer Lab</h3>
+                        <p>State-of-the-art computer laboratory with high-speed internet and latest software for digital literacy.</p>
+                    </div>
+                </div>
+                <div class="facility-card">
+                    <div class="facility-image" style="background-image: url('https://i.imgur.com/f1FDVDs.jpeg');"></div>
+                    <div class="facility-content">
+                        <h3>Sports Complex</h3>
+                        <p>Comprehensive sports facilities including football field, basketball court, and indoor games for physical development.</p>
+                    </div>
+                </div>
+                <div class="facility-card">
+                    <div class="facility-image" style="background-image: url('https://i.imgur.com/9PBiqgE.jpeg');"></div>
+                    <div class="facility-content">
+                        <h3>Cafeteria</h3>
+                        <p>Clean and hygienic cafeteria serving nutritious meals and snacks to keep students energized throughout the day.</p>
+                    </div>
+                </div>
+                <div class="facility-card">
+                    <div class="facility-image" style="background-image: url('https://i.imgur.com/5NUyWnW.jpeg');"></div>
+                    <div class="facility-content">
+                        <h3>Transportation</h3>
+                        <p>Safe and reliable school bus service covering major routes in the city for convenient student transportation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Academic Programs Section -->
+    <section id="programme" class="main-section">
+        <div class="section-content">
+            <h2>Our Academic Programs</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-child" style="font-size: 2rem; color: white;"></i>
+                    </div>
+                    <h3 style="color: #1e293b; margin-bottom: 1rem;">Primary Education</h3>
+                    <p style="color: #64748b;">Foundation learning with focus on literacy, numeracy, and character development for ages 6-11.</p>
+                </div>
+                <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-user-graduate" style="font-size: 2rem; color: white;"></i>
+                    </div>
+                    <h3 style="color: #1e293b; margin-bottom: 1rem;">Junior Secondary</h3>
+                    <p style="color: #64748b;">Comprehensive curriculum preparing students for senior secondary education with diverse subject options.</p>
+                </div>
+                <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-graduation-cap" style="font-size: 2rem; color: white;"></i>
+                    </div>
+                    <h3 style="color: #1e293b; margin-bottom: 1rem;">Senior Secondary</h3>
+                    <p style="color: #64748b;">Advanced studies in Science, Arts, and Commercial tracks preparing students for higher education.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="main-section testimonials-section">
+        <div class="section-content">
+            <h2>What Parents & Students Say</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"The quality of education and care my child receives here is exceptional. The teachers are dedicated and the facilities are top-notch."</p>
+                    <div class="testimonial-author">- Mrs. Adebayo, Parent</div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"This school has shaped me into who I am today. The academic excellence and moral values taught here are unmatched."</p>
+                    <div class="testimonial-author">- David Okafor, Alumni</div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"I love the interactive learning environment and the way teachers make complex subjects easy to understand."</p>
+                    <div class="testimonial-author">- Sarah Ibrahim, Student</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Events & Gallery Section -->
+    <section id="gallery" class="main-section gallery-section">
+        <div class="section-content">
+            <h2>Events & Gallery</h2>
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="https://i.imgur.com/orapxJg.jpeg" alt="School Event">
+                    <div class="gallery-overlay">
+                        <h4>Annual Sports Day</h4>
+                        <p>Students showcasing their athletic talents</p>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.imgur.com/bvGpBIc.jpeg" alt="Classroom">
+                    <div class="gallery-overlay">
+                        <h4>Interactive Learning</h4>
+                        <p>Modern classroom environment</p>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.imgur.com/riRc33E.jpeg" alt="Students">
+                    <div class="gallery-overlay">
+                        <h4>Student Activities</h4>
+                        <p>Collaborative learning sessions</p>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.imgur.com/dPq3KSi.jpeg" alt="Science Lab">
+                    <div class="gallery-overlay">
+                        <h4>Science Laboratory</h4>
+                        <p>Hands-on experiments and research</p>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.imgur.com/f1FDVDs.jpeg" alt="Library">
+                    <div class="gallery-overlay">
+                        <h4>Library Sessions</h4>
+                        <p>Quiet study and research time</p>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.imgur.com/5NUyWnW.jpeg" alt="Sports">
+                    <div class="gallery-overlay">
+                        <h4>Sports Activities</h4>
+                        <p>Physical education and fitness</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Latest News Section -->
+<section class="main-section news-section">
+  <div class="section-content">
+    <h2 class="section-title">Latest News & Updates</h2>
+    <div class="news-grid">
+      <% if (announcements && announcements.length > 0) { %>
+        <% announcements.forEach((announcement, index) => { %>
+          <div class="news-card" style="animation-delay: <%= index * 0.2 %>s;">
+            <div class="news-image"></div>
+            <div class="news-content">
+              <div class="news-date"><%= new Date(announcement.createdAt).toLocaleDateString() %></div>
+              <h3><%= announcement.title %></h3>
+              <p><%= announcement.content.substring(0, 120) %>...</p>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <% const fallbackNews = [
+          { date: 'Recent', title: 'Welcome to New Academic Session', content: 'We are excited to welcome all students to the new academic session. Registration is now open for new admissions.' },
+          { date: 'This Week', title: 'Inter-House Sports Competition', content: 'Annual inter-house sports competition will be held next month. Students are encouraged to participate in various sporting events.' },
+          { date: 'Upcoming', title: 'Parent-Teacher Conference', content: "Join us for the quarterly parent-teacher conference to discuss your child's academic progress and development." }
+        ]; %>
+
+        <% fallbackNews.forEach((news, index) => { %>
+          <div class="news-card" style="animation-delay: <%= index * 0.2 %>s;">
+            <div class="news-image"></div>
+            <div class="news-content">
+              <div class="news-date"><%= news.date %></div>
+              <h3><%= news.title %></h3>
+              <p><%= news.content %></p>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+
+    <!-- Admission Section -->
+<section id="admission" class="main-section admission-section">
+  <div class="section-content">
+    <h2>Ready to Join Our School Family?</h2>
+    <div class="admission-text">
+      <p>
+        Take the first step towards your child's bright future. Our admission process is simple and straightforward.
+      </p>
+      <div class="admission-buttons">
+        <a href="#contact" class="btn btn-primary">
+          <i class="fas fa-phone"></i> Contact Admissions
+        </a>
+        <a href="#" class="btn btn-outline">
+          <i class="fas fa-download"></i> Download Brochure
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+    <!-- Footer -->
+    <footer id="contact" class="landing-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <img src="<%= school && school.logo ? school.logo : '/images/default-logo.png' %>" alt="School Logo" style="width: 50px; height: 50px; border-radius: 50%;">
+                        <h3><%= school ? school.name : 'Your School Name' %></h3>
+                    </div>
+                    <p><%= school && school.motto ? school.motto : 'Excellence in Education' %></p>
+                    <% if (school && school.vision) { %>
+                        <p><%= school.vision %></p>
+                    <% } %>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Contact Information</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> <%= school && school.address ? school.address : 'School Address Here' %></p>
+                    <p><i class="fas fa-phone"></i> <%= school && school.phone ? school.phone : '+234-XXX-XXX-XXXX' %></p>
+                    <p><i class="fas fa-envelope"></i> <%= school && school.email ? school.email : 'info@school.edu.ng' %></p>
+                    <% if (school && school.website) { %>
+                        <p><i class="fas fa-globe"></i> <%= school.website %></p>
+                    <% } %>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <p><a href="#about">About Us</a></p>
+                    <p><a href="#admission">Admission</a></p>
+                    <p><a href="#facilities">Facilities</a></p>
+                    <p><a href="/login">Student Portal</a></p>
+                    <p><a href="/login">Staff Portal</a></p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <a href="#" style="font-size: 1.5rem;"><i class="fab fa-facebook"></i></a>
+                        <a href="#" style="font-size: 1.5rem;"><i class="fab fa-instagram"></i></a>
+                        <a href="#" style="font-size: 1.5rem;"><i class="fab fa-twitter"></i></a>
+                        <a href="#" style="font-size: 1.5rem;"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 <%= school ? school.name : 'Your School Name' %>. All rights reserved. | Powered by EduPilot NG</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Enhanced JavaScript functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile Navigation Toggle
+            const mobileNavToggle = document.getElementById('mobileNavToggle');
+            const navMenu = document.getElementById('navMenu');
+            
+            if (mobileNavToggle && navMenu) {
+                mobileNavToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                    const icon = this.querySelector('i');
+                    if (navMenu.classList.contains('active')) {
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    } else {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                });
+                
+                // Close menu when clicking on a link
+                navMenu.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'A') {
+                        navMenu.classList.remove('active');
+                        const icon = mobileNavToggle.querySelector('i');
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                });
+            }
+            
+            // Enhanced Hero Carousel
+            let currentSlide = 0;
+            const slides = document.querySelectorAll('.hero-slide');
+            
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.remove('active');
+                    if (i === index) {
+                        slide.classList.add('active');
+                    }
+                });
+            }
+            
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            }
+            
+            // Auto-advance slides every 6 seconds
+            setInterval(nextSlide, 6000);
+            
+            // Enhanced smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        const offsetTop = target.offsetTop - 80; // Account for sticky nav
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // Enhanced scroll animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                        
+                        // Special animation for stat numbers
+                        if (entry.target.classList.contains('stat-item')) {
+                            animateStatNumber(entry.target);
+                        }
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe elements for animation
+            document.querySelectorAll('.facility-card, .news-card, .gallery-item, .testimonial-card, .stat-item').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                observer.observe(el);
+            });
+            
+            // Enhanced counter animation
+            function animateStatNumber(statItem) {
+                const numberElement = statItem.querySelector('.stat-number');
+                if (!numberElement) return;
+                
+                const finalNumber = parseInt(numberElement.textContent.replace(/\D/g, ''));
+                const suffix = numberElement.textContent.replace(/\d/g, '');
+                let currentNumber = 0;
+                const increment = finalNumber / 100;
+                const duration = 2000;
+                const stepTime = duration / 100;
+                
+                const timer = setInterval(() => {
+                    currentNumber += increment;
+                    if (currentNumber >= finalNumber) {
+                        numberElement.textContent = finalNumber + suffix;
+                        clearInterval(timer);
+                    } else {
+                        numberElement.textContent = Math.floor(currentNumber) + suffix;
+                    }
+                }, stepTime);
+            }
+            
+            // Parallax effect for hero section
+            window.addEventListener('scroll', function() {
+                const scrolled = window.pageYOffset;
+                const heroSection = document.querySelector('.hero-section');
+                if (heroSection) {
+                    const rate = scrolled * -0.5;
+                    heroSection.style.transform = `translateY(${rate}px)`;
+                }
+            });
+            
+            // Enhanced navbar background on scroll
+            const stickyNav = document.querySelector('.sticky-nav');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 100) {
+                    stickyNav.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)';
+                    stickyNav.style.backdropFilter = 'blur(20px)';
+                } else {
+                    stickyNav.style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+                    stickyNav.style.backdropFilter = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

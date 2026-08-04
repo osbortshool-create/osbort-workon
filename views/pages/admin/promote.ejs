@@ -1,0 +1,472 @@
+<%- include('../../partials/header') %>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Promote Students</h1>
+        <% if (activeSession) { %>
+            <div class="session-info" style="justify-self: end !important; display: flex;">
+                <span class="session-badge">
+                    <%= activeSession.sessionName %> - <%= activeSession.currentTerm %>
+                </span>
+            </div>
+        <% } %>
+    </div>
+    
+    <% if (!isThirdTerm) { %>
+        <div class="alert alert-warning" style="margin-top: 10px;">
+            <i class="fas fa-exclamation-triangle"></i>
+            Student promotion is only available during Third Term. Current term: <%= activeSession ? activeSession.currentTerm : 'Unknown' %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.success) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= query.success %>
+        </div>
+    <% } %>
+    
+    <% if (locals.query && query.error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= query.error %>
+        </div>
+    <% } %>
+    
+    <% if (isThirdTerm) { %>
+        <div class="filters" style="margin-top: 10px;">
+            <form method="GET" action="/admin/promote" class="filter-form">
+                <div class="filter-group">
+                    <label for="class">Select Class:</label>
+                    <select name="class" id="class" required>
+                        <option value="">Choose a class to promote</option>
+                        <% classes.forEach(cls => { %>
+                            <option value="<%= cls.className %>" <%= selectedClass === cls.className ? 'selected' : '' %>>
+                                <%= cls.className %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Load Students</button>
+            </form>
+        </div>
+        
+        <% if (selectedClass && students.length > 0) { %>
+            <div class="promotion-container">
+                <div class="promotion-header">
+                    <h2>Students in <%= selectedClass %></h2>
+                    <p>Select students to promote and choose their destination class</p>
+                </div>
+                
+                <form id="promotionForm" class="promotion-form">
+                    <input type="hidden" name="selectedClass" value="<%= selectedClass %>">
+                    
+                    <div class="destination-selection">
+                        <div class="form-group">
+                            <label for="newClass">Promote to:</label>
+                            <select id="newClass" name="newClass" required>
+                                <option value="">Select destination class</option>
+                                <% classes.forEach(cls => { %>
+                                    <% if (cls.className !== selectedClass) { %>
+                                        <option value="<%= cls.className %>"><%= cls.className %></option>
+                                    <% } %>
+                                <% }) %>
+                                <option value="Passing Out">🎓 Passing Out (Graduate)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll">
+                                        <label for="selectAll">Select All</label>
+                                    </th>
+                                    <th>Student Photo</th>
+                                    <th>Full Name</th>
+                                    <th>Student ID</th>
+                                    <th>Current Class</th>
+                                    <th>Overall Average</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% students.forEach(student => { %>
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="student-checkbox" name="selectedStudents" value="<%= student._id %>">
+                                        </td>
+                                        <td>
+                                            <img src="<%= student.passportURL %>" alt="<%= student.fullName %>" class="student-photo">
+                                        </td>
+                                        <td class="student-name"><%= student.fullName %></td>
+                                        <td><%= student.studentID %></td>
+                                        <td><%= student.currentClass %></td>
+                                        <td class="average-score">
+                                            <%= student.overallAverage %>%
+                                        </td>
+                                        <td>
+                                            <% 
+                                                let performanceClass = 'poor';
+                                                let performanceText = 'Poor';
+                                                if (student.overallAverage >= 80) { 
+                                                    performanceClass = 'excellent'; 
+                                                    performanceText = 'Excellent'; 
+                                                } else if (student.overallAverage >= 70) { 
+                                                    performanceClass = 'very-good'; 
+                                                    performanceText = 'Very Good'; 
+                                                } else if (student.overallAverage >= 60) { 
+                                                    performanceClass = 'good'; 
+                                                    performanceText = 'Good'; 
+                                                } else if (student.overallAverage >= 50) { 
+                                                    performanceClass = 'average'; 
+                                                    performanceText = 'Average'; 
+                                                }
+                                            %>
+                                            <span class="performance-badge <%= performanceClass %>">
+                                                <%= performanceText %>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="promotion-actions">
+                        <div class="selected-count">
+                            <span id="selectedCount">0</span> students selected
+                        </div>
+                        <button type="submit" class="btn btn-success" id="promoteBtn" disabled>
+                            <i class="fas fa-level-up-alt"></i> Promote Selected Students
+                        </button>
+                    </div>
+                </form>
+            </div>
+        <% } else if (selectedClass) { %>
+            <div class="no-students">
+                <div class="no-students-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>No Students Found</h3>
+                <p>No active students found in <%= selectedClass %></p>
+            </div>
+        <% } %>
+    <% } %>
+</div>
+
+<style>
+.promotion-container {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+.promotion-header {
+    background: #f8fafc;
+    padding: 2rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.promotion-header h2 {
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+}
+
+.promotion-header p {
+    color: #64748b;
+    margin: 0;
+}
+
+.promotion-form {
+    padding: 2rem;
+}
+
+.destination-selection {
+    background: #f1f5f9;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid #1e293b;
+}
+
+.destination-selection .form-group {
+    margin: 0;
+}
+
+.destination-selection label {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.destination-selection select {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background: white;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.average-score {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+
+.performance-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.performance-badge.excellent {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.performance-badge.very-good {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.performance-badge.good {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.performance-badge.average {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.performance-badge.poor {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.promotion-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.selected-count {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+#promoteBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.no-students {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    margin-top: 2rem;
+}
+
+.no-students-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
+}
+
+.no-students h3 {
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.no-students p {
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .promotion-actions {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .destination-selection select {
+        max-width: 100%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const promoteBtn = document.getElementById('promoteBtn');
+    const promotionForm = document.getElementById('promotionForm');
+    const newClassSelect = document.getElementById('newClass');
+    
+    // Select all functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            studentCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+    
+    // Individual checkbox change
+    studentCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateSelectedCount();
+        });
+    });
+    
+    function updateSelectAllState() {
+        const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+        const totalBoxes = document.querySelectorAll('.student-checkbox');
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = checkedBoxes.length === totalBoxes.length && totalBoxes.length > 0;
+            selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < totalBoxes.length;
+        }
+    }
+    
+    function updateSelectedCount() {
+        const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = count;
+        }
+        
+        if (promoteBtn) {
+            promoteBtn.disabled = count === 0 || !newClassSelect.value;
+        }
+    }
+    
+    // New class selection change
+    if (newClassSelect) {
+        newClassSelect.addEventListener('change', updateSelectedCount);
+    }
+    
+    // Form submission
+    if (promotionForm) {
+        promotionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+            const newClass = newClassSelect.value;
+            
+            if (checkedBoxes.length === 0) {
+                alert('Please select at least one student to promote');
+                return;
+            }
+            
+            if (!newClass) {
+                alert('Please select a destination class');
+                return;
+            }
+            
+            const studentIds = Array.from(checkedBoxes).map(cb => cb.value);
+            const actionText = newClass === 'Passing Out' ? 'mark as passed out' : `promote to ${newClass}`;
+            
+            if (confirm(`Are you sure you want to ${actionText} ${studentIds.length} student(s)? This action cannot be undone.`)) {
+                promoteStudents(studentIds, newClass);
+            }
+        });
+    }
+    
+    function promoteStudents(studentIds, newClass) {
+        promoteBtn.disabled = true;
+        promoteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        fetch('/admin/promote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                selectedStudents: studentIds,
+                newClass: newClass
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                
+                // Remove promoted students from the table
+                studentIds.forEach(id => {
+                    const checkbox = document.querySelector(`.student-checkbox[value="${id}"]`);
+                    if (checkbox) {
+                        checkbox.closest('tr').remove();
+                    }
+                });
+                
+                // Reset form state
+                updateSelectedCount();
+                updateSelectAllState();
+                newClassSelect.value = '';
+                
+                // Check if table is empty
+                const remainingStudents = document.querySelectorAll('.student-checkbox').length;
+                if (remainingStudents === 0) {
+                    location.reload();
+                }
+            } else {
+                showAlert('Error: ' + data.message, 'error');
+            }
+            
+            promoteBtn.disabled = false;
+            promoteBtn.innerHTML = '<i class="fas fa-level-up-alt"></i> Promote Selected Students';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while promoting students', 'error');
+            promoteBtn.disabled = false;
+            promoteBtn.innerHTML = '<i class="fas fa-level-up-alt"></i> Promote Selected Students';
+        });
+    }
+    
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            ${message}
+        `;
+        
+        const pageContent = document.querySelector('.page-content');
+        pageContent.insertBefore(alert, pageContent.firstChild);
+        
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    }
+});
+</script>
+
+<%- include('../../partials/footer') %>

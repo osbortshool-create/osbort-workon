@@ -1,0 +1,219 @@
+<%- include('../../partials/header') %>
+
+<div class="student-portal">
+    <div class="portal-header">
+        <div class="student-info">
+            <% const hasPhoto = student.passportURL && String(student.passportURL).trim() && !['/images/default-avatar.png','default-avatar.png','/uploads/default-avatar.png'].includes(String(student.passportURL)); %>
+            <% const initials = (student.fullName || 'Student').split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase(); %>
+            <% if (hasPhoto) { %>
+                <img src="<%= student.passportURL %>" alt="<%= student.fullName %>" class="student-photo-large">
+            <% } else { %>
+                <div class="student-avatar-fallback student-avatar-large" title="<%= student.fullName %>">
+                    <span><%= initials %></span>
+                </div>
+            <% } %>
+            <div class="student-details">
+                <h1><%= student.fullName %></h1>
+                <p class="student-id">ID: <%= student.studentID %></p>
+                <p class="student-class"><%= student.currentClass %> | <%= student.currentSession %></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="current-results">
+        <div class="section-header">
+            <h2>My Results</h2>
+            <div class="section-actions">
+                <a href="/student/portal" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b;">
+                    <i class="fas fa-arrow-left"></i> Back to Portal
+                </a>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters">
+            <form method="GET" action="/student/results" class="filter-form">
+                <div class="filter-group">
+                    <label for="session">Session:</label>
+                    <select name="session" id="session">
+                        <option value="">All Sessions</option>
+                        <% availableSessions.forEach(session => { %>
+                            <option value="<%= session %>" <%= selectedSession === session ? 'selected' : '' %>>
+                                <%= session %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="term">Term:</label>
+                    <select name="term" id="term">
+                        <option value="">All Terms</option>
+                        <% availableTerms.forEach(term => { %>
+                            <option value="<%= term %>" <%= selectedTerm === term ? 'selected' : '' %>>
+                                <%= term %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-secondary" style="background-color: #1e293b; color: #ffffff;">Filter</button>
+                <a href="/student/results" class="btn btn-outline" style="border: 2px solid #1e293b; color: #1e293b; height: 40px; ">Clear</a>
+            </form>
+        </div>
+        
+        <!-- Results Display -->
+        <% if (Object.keys(groupedResults).length > 0) { %>
+            <% Object.values(groupedResults).forEach(group => { %>
+                <div class="result-group">
+                    <div class="result-group-header">
+                        <h3><%= group.session %> - <%= group.term %></h3>
+                        <div class="result-actions">
+                            <a href="#" class="btn btn-primary btn-sm download-pdf-btn" data-term="<%= encodeURIComponent(group.term) %>" data-session="<%= encodeURIComponent(group.session) %>">
+                                <i class="fas fa-download"></i> Download PDF
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="results-table-container">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>CA</th>
+                                    <th>Exam</th>
+                                    <th>Total</th>
+                                    <th>Grade</th>
+                                    <th>Remark</th>
+                                    <th>Subject Position</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% group.results.forEach(result => { %>
+                                    <tr>
+                                        <td class="subject-name"><%= result.subject %></td>
+                                        <td><%= result.ca1 %></td>
+                                        <td><%= result.exam %></td>
+                                        <td class="total-score"><%= result.total %></td>
+                                        <td>
+                                            <span class="grade grade-<%= result.grade.toLowerCase() %>">
+                                                <%= result.grade %>
+                                            </span>
+                                        </td>
+                                        <td class="remark remark-<%= result.remark.toLowerCase().replace(/\s+/g, '-') %>">
+                                            <%= result.remark %>
+                                        </td>
+                                        <td class="position">
+                                            <% if (result.subjectPosition) { %>
+                                                <%= result.subjectPosition %>
+                                            <% } else { %>
+                                                -
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="results-summary">
+                        <% 
+                            const totalMarks = group.results.reduce((sum, result) => sum + result.total, 0);
+                            const averageScore = group.results.length > 0 ? (totalMarks / group.results.length).toFixed(2) : 0;
+                            const position = group.classPosition;
+                        %>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Subjects:</span>
+                            <span class="summary-value"><%= group.results.length %></span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Marks:</span>
+                            <span class="summary-value"><%= totalMarks %></span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Average Score:</span>
+                            <span class="summary-value"><%= averageScore %>%</span>
+                        </div>
+                        <% if (position) { %>
+                            <div class="summary-item">
+                                <span class="summary-label">Class Position:</span>
+                                <span class="summary-value"><%= position %></span>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="no-results">
+                <div class="no-results-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3>No Results Available</h3>
+                <p>Your results have not been uploaded yet or are not published.</p>
+                <p>Please check back later or contact your teacher.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.result-group {
+    background: var(--white);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.result-group-header {
+    background: var(--light-gray);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.result-group-header h3 {
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.result-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.position {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .result-group-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .results-table-container {
+        overflow-x: auto;
+    }
+    
+    .results-table {
+        min-width: 600px;
+    }
+}
+</style>
+
+<script>
+document.querySelectorAll('.download-pdf-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const term = decodeURIComponent(this.dataset.term);
+    const session = decodeURIComponent(this.dataset.session);
+    window.location.href = `/student/results/download?term=${encodeURIComponent(term)}&session=${encodeURIComponent(session)}`;
+  });
+});
+</script>
+<%- include('../../partials/footer') %>
