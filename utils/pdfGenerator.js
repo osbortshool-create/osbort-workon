@@ -129,35 +129,35 @@ async function generateReportCard(res, params) {
   doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(1).stroke();
   cursorY += 12;
 
-  // ── STUDENT INFO GRID (2 per row, no clashing) ────────────────────────────────
+  // ── STUDENT INFO GRID ─────────────────────────────────────────────────────────
   const col1X = ML;
   const col2X = ML + contentWidth / 2 + 10;
-  const rowH = 20;
+  const rowH = 18;
   doc.fontSize(10);
 
-  const sessionLabel = session ? `${session} Academic Session` : 'Academic Session';
+  // Extract only the year range (e.g. "2025/2026") from whatever was stored as session name
+  const yearMatch = session ? session.match(/\d{4}[\/-]\d{4}/) : null;
+  const sessionLabel = yearMatch ? `${yearMatch[0]} Academic Session` : 'Academic Session';
 
-  const infoRows = [
-    ['Name', student.fullName,               'Student ID', student.studentID],
-    ['Class', student.currentClass,           'Level', classLevel.charAt(0).toUpperCase() + classLevel.slice(1)],
-    ['Session', sessionLabel,                 'Term', term],
-    ['Gender', student.gender || '-',         'Date of Birth', student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('en-GB') : '-'],
-  ];
-
-  infoRows.forEach(([lbl1, val1, lbl2, val2]) => {
+  // Row helper
+  const infoRow = (lbl1, val1, lbl2, val2) => {
     doc.font('Helvetica').fillColor('#555').text(`${lbl1}:`, col1X, cursorY, { continued: true })
       .font('Helvetica-Bold').fillColor('#111').text(` ${val1 || '-'}`, { lineBreak: false });
-    doc.font('Helvetica').fillColor('#555').text(`${lbl2}:`, col2X, cursorY, { continued: true })
-      .font('Helvetica-Bold').fillColor('#111').text(` ${val2 || '-'}`, { lineBreak: false });
+    if (lbl2) {
+      doc.font('Helvetica').fillColor('#555').text(`${lbl2}:`, col2X, cursorY, { continued: true })
+        .font('Helvetica-Bold').fillColor('#111').text(` ${val2 || '-'}`, { lineBreak: false });
+    }
     cursorY += rowH;
-  });
+  };
+
+  infoRow('Name', student.fullName, 'Student ID', student.studentID);
+  infoRow('Class', student.currentClass, 'Level', classLevel.charAt(0).toUpperCase() + classLevel.slice(1));
+  // Session gets its own full row — no Term next to it, so it never clashes
+  infoRow('Session', sessionLabel, null, null);
+  infoRow('Term', term, 'Gender', student.gender || '-');
 
   doc.fillColor('black');
   cursorY += 8;
-
-  // Divider
-  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(0.5).stroke();
-  cursorY += 10;
 
   // ── RESULTS TABLE ─────────────────────────────────────────────────────────────
   const cols = [
@@ -169,21 +169,19 @@ async function generateReportCard(res, params) {
     { label: 'Remark',     width: 115, key: 'remark' },
   ];
 
-  // Table header row background
-  doc.rect(ML, cursorY, contentWidth, 16).fill('#1a3c6e');
-  doc.fillColor('white').font('Helvetica-Bold').fontSize(9);
+  // Table header row
+  doc.font('Helvetica-Bold').fontSize(9).fillColor('#111');
   let cx = ML + 4;
   cols.forEach((col) => {
     doc.text(col.label, cx, cursorY + 3, { width: col.width - 4, lineBreak: false });
     cx += col.width;
   });
   cursorY += 16;
+  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(0.5).stroke();
 
   doc.fillColor('black').font('Helvetica').fontSize(9);
   let rowIndex = 0;
   results.forEach((r) => {
-    const rowBg = rowIndex % 2 === 0 ? '#f0f4f8' : '#ffffff';
-    doc.rect(ML, cursorY, contentWidth, 15).fill(rowBg);
     doc.fillColor('#111');
     cx = ML + 4;
     [r.subject, r.ca1 || 0, r.exam || 0, r.total || 0, r.grade || '-', r.remark || '-'].forEach((val, i) => {
@@ -194,8 +192,6 @@ async function generateReportCard(res, params) {
     rowIndex++;
   });
 
-  // Bottom table border
-  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(0.5).stroke();
   cursorY += 12;
 
   // ── SUMMARY ───────────────────────────────────────────────────────────────────
@@ -215,9 +211,6 @@ async function generateReportCard(res, params) {
   doc.fillColor('black');
   cursorY += 20;
 
-  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(0.5).stroke();
-  cursorY += 10;
-
   // ── COMMENTS ─────────────────────────────────────────────────────────────────
   doc.font('Helvetica-Bold').fontSize(9).fillColor('#333').text("Class Teacher's Comment:", ML, cursorY);
   cursorY += 13;
@@ -231,7 +224,6 @@ async function generateReportCard(res, params) {
     .text(student.principalComment || 'Satisfactory progress.', ML, cursorY, { width: contentWidth });
   cursorY += 28;
 
-  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(0.5).stroke();
   cursorY += 18;
 
   // ── SIGNATURE ROW ─────────────────────────────────────────────────────────────
