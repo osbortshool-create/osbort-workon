@@ -16,7 +16,8 @@ const schoolSchema = new mongoose.Schema({
   accreditation: { type: String, default: '' },
   establishedYear: { type: Number, default: null },
   gallery: [String],
-  campus: { type: String, default: 'Lagos' }
+  campus: { type: String, default: 'Lagos' },
+  signatureUrl: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('School', schoolSchema);

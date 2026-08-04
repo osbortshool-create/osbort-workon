@@ -1549,7 +1549,8 @@ router.post('/school', upload.single('logo'), async (req, res) => {
       principalMessage: req.body.principalMessage || '',
       accreditation: req.body.accreditation || '',
       establishedYear: req.body.establishedYear || null,
-      campus: req.session.campus
+      campus: req.session.campus,
+      signatureUrl: req.body.signatureUrl || ''
     };
 
     if (req.file) {

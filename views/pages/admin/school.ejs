@@ -91,6 +91,17 @@
         </div>
 
         <div class="form-section">
+            <h2>Director of Studies Signature</h2>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="signatureUrl">Signature Image Link (URL)</label>
+                    <input type="url" id="signatureUrl" name="signatureUrl" value="<%= school && school.signatureUrl ? school.signatureUrl : '' %>" placeholder="Paste the image link here, e.g. https://i.imgur.com/example.png">
+                    <small>Paste the direct link to the signature image. This will appear on all student result PDFs. Use a PNG with a transparent background for the best result.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
             <h2>Admin Login Credentials</h2>
             <div class="form-grid">
                 <div class="form-group">
