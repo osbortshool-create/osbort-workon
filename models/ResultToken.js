@@ -31,11 +31,7 @@ resultTokenSchema.statics.validateToken = async function (token, studentID, sess
     { token, studentID, session, term, campus },
     { token, studentID, session, campus },
     { token, studentID, term, campus },
-    { token, studentID, campus },
-    { token, studentID, session, term },
-    { token, studentID, session },
-    { token, studentID, term },
-    { token, studentID }
+    { token, studentID, campus }
   ];
 
   let record = null;
