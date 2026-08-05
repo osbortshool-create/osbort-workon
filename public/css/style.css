@@ -1511,8 +1511,7 @@ body {
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 0
-    .5rem;
+    gap: 0.5rem;
 }
 
 .form-group {
@@ -1676,26 +1675,76 @@ body {
 /* Mobile Responsive for Login */
 @media (max-width: 480px) {
     .login-page {
-        padding: 1rem;
+        padding: 0.5rem;
     }
-    
+
     .login-container {
-        padding: 1rem;
-        margin: 1rem;
+        background: transparent;
+        backdrop-filter: none;
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        margin: 0.25rem;
         max-width: 100%;
+        width: 100%;
+        box-shadow: none;
     }
-    
+
+    .login-header {
+        margin-bottom: 1rem;
+    }
+
     .login-header h1 {
-        font-size: 1.75rem;
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
     }
-    
+
+    .login-header p {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+
     .login-logo {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
+        margin-bottom: 0.75rem;
     }
-    
+
     .login-logo i {
-        font-size: 1.75rem;
+        font-size: 1.2rem;
+    }
+
+    .login-form {
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-size: 0.82rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-group select,
+    .form-group input,
+    .form-group textarea {
+        padding: 0.85rem 0.85rem 0.85rem 2.8rem;
+        font-size: 0.9rem;
+        border-radius: 0.85rem;
+    }
+
+    .form-group .input-icon {
+        left: 0.85rem;
+        font-size: 0.95rem;
+    }
+
+    .login-btn {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        font-size: 0.95rem;
+        border-radius: 0.9rem;
+    }
+
+    .login-help {
+        font-size: 0.8rem;
+        margin-top: 1rem;
     }
 }
 
