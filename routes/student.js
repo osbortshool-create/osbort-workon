@@ -40,63 +40,59 @@ function buildStudentIdentifierFilters(student) {
   return filters;
 }
 
+function deduplicateResults(results) {
+  // Keep only one record per subject (prefer published > approved > others)
+  const seen = new Map();
+  const statusRank = { published: 3, approved: 2, sent: 1, draft: 0 };
+  for (const r of results) {
+    const key = `${r.subject}|${r.term}|${r.session}`;
+    const existing = seen.get(key);
+    const rRank = statusRank[r.status] ?? 0;
+    const existingRank = existing ? (statusRank[existing.status] ?? 0) : -1;
+    if (!existing || rRank > existingRank) {
+      seen.set(key, r);
+    }
+  }
+  return [...seen.values()].sort((a, b) => a.subject.localeCompare(b.subject));
+}
+
 async function findStudentResults(student, { campus } = {}) {
   const identifierFilters = buildStudentIdentifierFilters(student);
   if (!identifierFilters.length) {
     return [];
   }
 
-  const baseQuery = {
-    $or: identifierFilters
-  };
+  const baseQuery = { $or: identifierFilters };
 
   const publishedQuery = {
     $and: [
       baseQuery,
-      {
-        $or: [{ status: 'published' }, { published: true }, { status: 'approved' }]
-      }
+      { $or: [{ status: 'published' }, { published: true }, { status: 'approved' }] }
     ]
   };
 
-  const campusFilters = [];
-  if (campus) {
-    campusFilters.push({ campus });
-  }
-
-  if (campusFilters.length) {
-    publishedQuery.$and.push(...campusFilters);
-  }
+  if (campus) publishedQuery.$and.push({ campus });
 
   let results = await Result.find(publishedQuery).sort({ subject: 1 });
 
   if (results.length > 0) {
-    return results;
+    return deduplicateResults(results);
   }
 
-  const fallbackQuery = {
-    $and: [baseQuery]
-  };
-
-  if (campusFilters.length) {
-    fallbackQuery.$and.push(...campusFilters);
-  }
+  const fallbackQuery = { $and: [baseQuery] };
+  if (campus) fallbackQuery.$and.push({ campus });
 
   results = await Result.find(fallbackQuery).sort({ subject: 1 });
 
   if (results.length > 0) {
-    return results;
+    return deduplicateResults(results);
   }
 
   if (campus) {
-    const campusFreeQuery = {
-      $or: identifierFilters
-    };
-
-    results = await Result.find(campusFreeQuery).sort({ subject: 1 });
+    results = await Result.find({ $or: identifierFilters }).sort({ subject: 1 });
   }
 
-  return results;
+  return deduplicateResults(results);
 }
 
 async function calculateStudentClassPosition(student, { className, term, session, campus }) {

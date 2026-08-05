@@ -5,7 +5,6 @@ const https = require('https');
 const http = require('http');
 const { getClassLevel } = require('./classLevel');
 
-// Fallback headers when school settings are missing
 const CAMPUS_FALLBACK = {
   Ekiti: {
     name: 'Osbot International School, Ekiti State',
@@ -17,7 +16,6 @@ const CAMPUS_FALLBACK = {
   }
 };
 
-// Canonical display name per campus (overrides whatever is in school.name for the PDF header)
 const CAMPUS_DISPLAY_NAME = {
   Ekiti: 'Osbot International School, Ekiti State',
   Lagos: 'Osbot Group of Schools, Lagos State'
@@ -71,7 +69,6 @@ function fetchImageBuffer(url) {
   });
 }
 
-// Returns true for JSS/SS levels — these get "VP Academics" instead of "HM"
 function isSecondaryLevel(currentClass) {
   if (!currentClass) return false;
   const key = currentClass.trim().toLowerCase();
@@ -82,205 +79,199 @@ async function generateReportCard(res, params) {
   const { student, results, school, campus, term, session } = params;
   const fallback = CAMPUS_FALLBACK[campus] || CAMPUS_FALLBACK.Lagos;
 
-  // School name: always use the canonical campus display name
   const schoolDisplayName = CAMPUS_DISPLAY_NAME[campus] || fallback.name;
   const schoolAddress = (school && school.address && school.address.trim())
-    ? school.address.trim()
-    : fallback.address;
+    ? school.address.trim() : fallback.address;
   const schoolPhone = (school && school.phone && school.phone.trim())
-    ? school.phone.trim()
-    : '';
+    ? school.phone.trim() : '';
 
-  const classLevel = getClassLevel(student.currentClass);
   const secondary = isSecondaryLevel(student.currentClass);
 
-  // Fetch signature from URL
   const signatureUrl = school && school.signatureUrl ? school.signatureUrl.trim() : '';
   const signatureBuffer = signatureUrl ? await fetchImageBuffer(signatureUrl) : null;
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40, autoFirstPage: true });
+  const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="result-${student.studentID}-${term}-${session}.pdf"`);
   doc.pipe(res);
 
-  const PW = doc.page.width;   // 595
-  const PH = doc.page.height;  // 842
-  const ML = 40;
-  const MR = 40;
-  const CW = PW - ML - MR;    // content width = 515
+  const PW = doc.page.width;   // 595.28
+  const PH = doc.page.height;  // 841.89
+  const ML = 36;
+  const MR = 36;
+  const CW = PW - ML - MR;    // ~523
 
   // ── WATERMARK ────────────────────────────────────────────────────────────────
   const logoUrl = school && school.logo ? school.logo : null;
   const logoPath = resolveLogoPath(logoUrl);
   if (logoPath) {
     try {
-      const wSize = 460;
+      const wSize = 400;
       doc.save();
-      doc.opacity(0.13);
-      doc.image(logoPath, (PW - wSize) / 2, (PH - wSize) / 2 - 30, { width: wSize, height: wSize });
+      doc.opacity(0.12);
+      doc.image(logoPath, (PW - wSize) / 2, (PH - wSize) / 2 - 20, { width: wSize, height: wSize });
       doc.restore();
-    } catch (e) { /* skip watermark */ }
+    } catch (e) { /* skip */ }
   }
 
-  // ── TOP LOGO (rounded circle at top center) ───────────────────────────────────
-  let cursorY = 30;
-  const logoSize = 68;
-  const logoCenterX = PW / 2;
-  const logoCY = cursorY + logoSize / 2;
+  // ── TOP LOGO ─────────────────────────────────────────────────────────────────
+  let Y = 22;
+  const logoSize = 60;
+  const logoCX = PW / 2;
+  const logoCY = Y + logoSize / 2;
 
   if (logoPath) {
     try {
-      // Clip to a circle then draw logo
       doc.save();
-      doc.circle(logoCenterX, logoCY, logoSize / 2).clip();
-      doc.image(logoPath, logoCenterX - logoSize / 2, cursorY, { width: logoSize, height: logoSize });
+      doc.circle(logoCX, logoCY, logoSize / 2).clip();
+      doc.image(logoPath, logoCX - logoSize / 2, Y, { width: logoSize, height: logoSize });
       doc.restore();
-      // Draw a thin circle border around the logo
-      doc.circle(logoCenterX, logoCY, logoSize / 2).lineWidth(0.8).stroke('#aaa');
-    } catch (e) { /* skip top logo */ }
+      doc.circle(logoCX, logoCY, logoSize / 2).lineWidth(0.7).stroke('#bbb');
+    } catch (e) { /* skip */ }
   }
 
-  cursorY += logoSize + 8;
+  Y += logoSize + 6;
 
-  // ── SCHOOL NAME (Times-BoldItalic — closest built-in decorative/script font) ──
-  doc.fontSize(16).font('Times-BoldItalic').fillColor('#1a1a1a')
-    .text(schoolDisplayName, ML, cursorY, { align: 'center', width: CW });
-  cursorY += 22;
+  // ── SCHOOL NAME ───────────────────────────────────────────────────────────────
+  doc.fontSize(15).font('Times-BoldItalic').fillColor('#111')
+    .text(schoolDisplayName, ML, Y, { align: 'center', width: CW, lineBreak: false });
+  Y += 18;
 
-  // Address + phone on same line
   const phoneStr = schoolPhone ? `  |  Tel: ${schoolPhone}` : '';
-  doc.fontSize(8.5).font('Helvetica').fillColor('#444')
-    .text(`${schoolAddress}${phoneStr}`, ML, cursorY, { align: 'center', width: CW });
-  cursorY += 16;
+  doc.fontSize(8).font('Helvetica').fillColor('#555')
+    .text(`${schoolAddress}${phoneStr}`, ML, Y, { align: 'center', width: CW, lineBreak: false });
+  Y += 14;
 
-  doc.fontSize(12).font('Helvetica-BoldOblique').fillColor('#111')
-    .text('Student Report Card', ML, cursorY, { align: 'center', width: CW });
-  cursorY += 18;
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#222')
+    .text('STUDENT REPORT CARD', ML, Y, { align: 'center', width: CW, lineBreak: false });
+  Y += 14;
 
-  // Divider
-  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(1).stroke('#999');
-  cursorY += 10;
+  doc.moveTo(ML, Y).lineTo(PW - MR, Y).lineWidth(1).stroke('#888');
+  Y += 7;
 
-  // ── STUDENT INFO (2-column, NO Level row) ─────────────────────────────────────
-  const col1X = ML;
-  const col2X = ML + CW / 2 + 10;
-  const rowH = 17;
-  doc.fontSize(10).fillColor('black');
-
-  // Extract year range only from session name
+  // ── STUDENT INFO (2-column grid) ──────────────────────────────────────────────
   const yearMatch = session ? session.match(/\d{4}[\/-]\d{4}/) : null;
   const sessionLabel = yearMatch ? `${yearMatch[0]} Academic Session` : 'Academic Session';
 
-  const infoRow = (lbl1, val1, lbl2, val2) => {
-    doc.font('Helvetica').fillColor('#555').text(`${lbl1}:`, col1X, cursorY, { continued: true })
-      .font('Helvetica-Bold').fillColor('#111').text(` ${val1 || '-'}`, { lineBreak: false });
-    if (lbl2) {
-      doc.font('Helvetica').fillColor('#555').text(`${lbl2}:`, col2X, cursorY, { continued: true })
-        .font('Helvetica-Bold').fillColor('#111').text(` ${val2 || '-'}`, { lineBreak: false });
+  const halfW = CW / 2 - 4;
+  const c1 = ML;
+  const c2 = ML + CW / 2 + 4;
+  const infoH = 14;
+
+  const infoRow = (l1, v1, l2, v2) => {
+    doc.font('Helvetica').fontSize(8.5).fillColor('#666')
+      .text(`${l1}:`, c1, Y, { continued: true, lineBreak: false })
+      .font('Helvetica-Bold').fillColor('#111')
+      .text(` ${v1 || '-'}`, { lineBreak: false });
+    if (l2) {
+      doc.font('Helvetica').fontSize(8.5).fillColor('#666')
+        .text(`${l2}:`, c2, Y, { continued: true, lineBreak: false })
+        .font('Helvetica-Bold').fillColor('#111')
+        .text(` ${v2 || '-'}`, { lineBreak: false });
     }
-    cursorY += rowH;
+    Y += infoH;
   };
 
   infoRow('Name', student.fullName, 'Student ID', student.studentID);
   infoRow('Class', student.currentClass, 'Gender', student.gender || '-');
-  // Session on its own full row to avoid clashing
-  infoRow('Session', sessionLabel, null, null);
-  infoRow('Term', term, null, null);
+  infoRow('Session', sessionLabel, 'Term', term);
 
   doc.fillColor('black');
-  cursorY += 6;
+  Y += 5;
 
   // ── RESULTS TABLE ─────────────────────────────────────────────────────────────
   const cols = [
-    { label: 'Subject',   width: 160 },
-    { label: 'CA (40)',   width: 65  },
-    { label: 'Exam (60)', width: 65  },
-    { label: 'Total',     width: 55  },
-    { label: 'Grade',     width: 55  },
-    { label: 'Remark',    width: 115 },
+    { label: 'Subject',    width: 155 },
+    { label: 'CA (40)',    width: 58  },
+    { label: 'Exam (60)', width: 58  },
+    { label: 'Total',      width: 52  },
+    { label: 'Grade',      width: 52  },
+    { label: 'Remark',     width: 148 },
   ];
 
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#111');
-  let cx = ML + 4;
+  // Header
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#111');
+  let cx = ML + 3;
   cols.forEach((col) => {
-    doc.text(col.label, cx, cursorY + 3, { width: col.width - 4, lineBreak: false });
+    doc.text(col.label, cx, Y + 2, { width: col.width - 3, lineBreak: false });
     cx += col.width;
   });
-  cursorY += 16;
-  doc.moveTo(ML, cursorY).lineTo(PW - MR, cursorY).lineWidth(0.5).stroke('#999');
+  Y += 14;
+  doc.moveTo(ML, Y).lineTo(PW - MR, Y).lineWidth(0.5).stroke('#aaa');
 
-  doc.font('Helvetica').fontSize(9).fillColor('#111');
+  // Rows
+  doc.font('Helvetica').fontSize(8.5).fillColor('#111');
   results.forEach((r) => {
-    cx = ML + 4;
-    [r.subject, r.ca1 || 0, r.exam || 0, r.total || 0, r.grade || '-', r.remark || '-'].forEach((val, i) => {
-      doc.text(String(val), cx, cursorY + 3, { width: cols[i].width - 4, lineBreak: false });
+    cx = ML + 3;
+    [r.subject, r.ca1 ?? 0, r.exam ?? 0, r.total ?? 0, r.grade || '-', r.remark || '-'].forEach((val, i) => {
+      doc.text(String(val), cx, Y + 2, { width: cols[i].width - 3, lineBreak: false });
       cx += cols[i].width;
     });
-    cursorY += 15;
+    Y += 13;
   });
-
-  cursorY += 10;
+  Y += 6;
 
   // ── SUMMARY ───────────────────────────────────────────────────────────────────
-  const totalScore = results.reduce((sum, r) => sum + (Number(r.total) || 0), 0);
+  const totalScore = results.reduce((s, r) => s + (Number(r.total) || 0), 0);
   const average = results.length > 0 ? (totalScore / results.length).toFixed(1) : '0';
-
-  doc.font('Helvetica-Bold').fontSize(10).fillColor('#111');
-  doc.text(`Total Score: ${totalScore}     Average: ${average}%`, ML, cursorY);
-  cursorY += 16;
-
   const nextClass = getNextClass(student.currentClass);
   const promoText = nextClass ? `Promoted to: ${nextClass}` : 'Will be promoted to the next class';
-  doc.font('Helvetica-Bold').fontSize(10).fillColor('#1a3c6e').text(promoText, ML, cursorY);
-  doc.fillColor('black');
-  cursorY += 18;
 
-  // ── COMMENTS ─────────────────────────────────────────────────────────────────
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#333').text("Class Teacher's Comment:", ML, cursorY);
-  cursorY += 13;
-  doc.font('Helvetica').fontSize(9).fillColor('#111')
-    .text(student.teacherComment || 'Keep up the good work.', ML, cursorY, { width: CW });
-  cursorY += 20;
+  doc.font('Helvetica-Bold').fontSize(9).fillColor('#111')
+    .text(`Total Score: ${totalScore}     Average: ${average}%     ${promoText}`, ML, Y, { width: CW, lineBreak: false });
+  Y += 14;
 
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#333').text("Director of Studies Comment:", ML, cursorY);
-  cursorY += 13;
-  doc.font('Helvetica').fontSize(9).fillColor('#111')
-    .text(student.principalComment || 'Satisfactory progress.', ML, cursorY, { width: CW });
-  cursorY += 30;
+  // ── COMMENTS (side by side) ───────────────────────────────────────────────────
+  const cmtW = CW / 2 - 6;
+  const cmtR = ML + CW / 2 + 6;
+
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
+    .text("Class Teacher's Comment:", ML, Y, { width: cmtW, lineBreak: false });
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
+    .text("Director of Studies Comment:", cmtR, Y, { width: cmtW, lineBreak: false });
+  Y += 12;
+
+  const tcText = student.teacherComment || 'Keep up the good work.';
+  const dsText = student.principalComment || 'Satisfactory progress.';
+  doc.font('Helvetica').fontSize(8.5).fillColor('#111')
+    .text(tcText, ML, Y, { width: cmtW });
+  doc.font('Helvetica').fontSize(8.5).fillColor('#111')
+    .text(dsText, cmtR, Y, { width: cmtW });
+
+  // Advance Y past whichever comment was taller
+  const tcH = doc.heightOfString(tcText, { width: cmtW, fontSize: 8.5 });
+  const dsH = doc.heightOfString(dsText, { width: cmtW, fontSize: 8.5 });
+  Y += Math.max(tcH, dsH) + 16;
 
   // ── SIGNATURE ROW ─────────────────────────────────────────────────────────────
-  // 3 columns: /Class Teacher/ | HM or VP Academics | Board of Directors (+ signature image)
   const sigColW = CW / 3;
-  const leftX   = ML;
-  const centerX = ML + sigColW;
-  const rightX  = ML + sigColW * 2;
+  const s1 = ML;
+  const s2 = ML + sigColW;
+  const s3 = ML + sigColW * 2;
 
   const centerLabel = secondary ? 'VP Academics' : 'Headmistress';
 
-  // Signature image goes above the RIGHT column line (Board of Directors)
-  const lineTopY = cursorY + 36;
-  const labelY   = lineTopY + 5;
-
+  // Signature image above Board of Directors line
   if (signatureBuffer) {
     try {
-      const sigW = 100;
-      const sigH = 32;
-      const sigImgX = rightX + (sigColW - sigW) / 2;
-      doc.image(signatureBuffer, sigImgX, cursorY, { width: sigW, height: sigH });
+      const sigW = 90;
+      const sigH = 28;
+      doc.image(signatureBuffer, s3 + (sigColW - sigW) / 2, Y, { width: sigW, height: sigH });
     } catch (e) { /* skip */ }
   }
 
-  // Three signature lines
-  const lineInset = 8;
-  doc.lineWidth(0.8).strokeColor('#333');
-  doc.moveTo(leftX + lineInset,   lineTopY).lineTo(leftX + sigColW - lineInset,   lineTopY).stroke();
-  doc.moveTo(centerX + lineInset, lineTopY).lineTo(centerX + sigColW - lineInset, lineTopY).stroke();
-  doc.moveTo(rightX + lineInset,  lineTopY).lineTo(rightX + sigColW - lineInset,  lineTopY).stroke();
+  const lineY = Y + 32;
+  const pad = 8;
+  doc.lineWidth(0.7).strokeColor('#444');
+  doc.moveTo(s1 + pad, lineY).lineTo(s1 + sigColW - pad, lineY).stroke();
+  doc.moveTo(s2 + pad, lineY).lineTo(s2 + sigColW - pad, lineY).stroke();
+  doc.moveTo(s3 + pad, lineY).lineTo(s3 + sigColW - pad, lineY).stroke();
 
-  doc.font('Helvetica').fontSize(9).fillColor('#333');
-  doc.text('/Class Teacher/', leftX,   labelY, { width: sigColW, align: 'center' });
-  doc.text(centerLabel,       centerX, labelY, { width: sigColW, align: 'center' });
-  doc.text('Board of Directors', rightX, labelY, { width: sigColW, align: 'center' });
+  const lblY = lineY + 4;
+  doc.font('Helvetica').fontSize(8.5).fillColor('#333');
+  doc.text('Class Teacher', s1, lblY, { width: sigColW, align: 'center', lineBreak: false });
+  doc.text(centerLabel,     s2, lblY, { width: sigColW, align: 'center', lineBreak: false });
+  doc.text('Board of Directors', s3, lblY, { width: sigColW, align: 'center', lineBreak: false });
 
   doc.end();
 }
