@@ -35,8 +35,8 @@ const PROMOTION_MAP = {
   'jss 1': 'JSS 2', 'jss1': 'JSS 2',
   'jss 2': 'JSS 3', 'jss2': 'JSS 3',
   'jss 3': 'SS 1',  'jss3': 'SS 1',
-  'ss 1': 'SS 2', 'ss1': 'SS 2', 'sss 1': 'SS 2',
-  'ss 2': 'SS 3', 'ss2': 'SS 3', 'sss 2': 'SS 3',
+  'ss 1': 'SS 2',  'ss1': 'SS 2',  'sss 1': 'SS 2',
+  'ss 2': 'SS 3',  'ss2': 'SS 3',  'sss 2': 'SS 3',
   'ss 3': 'Graduation', 'ss3': 'Graduation', 'sss 3': 'Graduation',
 };
 
@@ -55,25 +55,20 @@ function resolveLogoPath(logoUrl) {
   return null;
 }
 
-// Fetch a remote image as a Buffer, or read a local path as a Buffer
 async function fetchImageBuffer(url) {
   if (!url || !url.trim()) return null;
   const trimmed = url.trim();
-
-  // Local file path (e.g. /uploads/signature.png stored in public/)
   const localPath = resolveLogoPath(trimmed);
   if (localPath) {
     try { return fs.readFileSync(localPath); } catch (e) { /* fall through */ }
   }
-
-  // Remote URL
   if (!trimmed.startsWith('http')) return null;
   return new Promise((resolve) => {
     const client = trimmed.startsWith('https') ? https : http;
     const request = client.get(trimmed, (resp) => {
       if (resp.statusCode !== 200) return resolve(null);
       const chunks = [];
-      resp.on('data', (chunk) => chunks.push(chunk));
+      resp.on('data', (c) => chunks.push(c));
       resp.on('end', () => resolve(Buffer.concat(chunks)));
       resp.on('error', () => resolve(null));
     });
@@ -99,7 +94,6 @@ async function generateReportCard(res, params) {
     ? school.phone.trim() : '';
 
   const secondary = isSecondaryLevel(student.currentClass);
-
   const signatureUrl = school && school.signatureUrl ? school.signatureUrl.trim() : '';
   const signatureBuffer = signatureUrl ? await fetchImageBuffer(signatureUrl) : null;
 
@@ -110,16 +104,42 @@ async function generateReportCard(res, params) {
 
   const PW = doc.page.width;   // 595.28
   const PH = doc.page.height;  // 841.89
-  const ML = 38;
-  const MR = 38;
-  const CW = PW - ML - MR;    // ~519
+
+  // Equal margins on both sides so content is perfectly centered
+  const ML = 48;
+  const MR = 48;
+  const CW = PW - ML - MR;    // 499.28
+
+  // ── Column layout (must match exactly so right info aligns under Remarks) ──
+  // Table columns total must equal CW
+  const COL_SUBJECT = 148;
+  const COL_CA      = 52;
+  const COL_EXAM    = 56;
+  const COL_TOTAL   = 48;
+  const COL_GRADE   = 48;
+  const COL_REMARKS = CW - COL_SUBJECT - COL_CA - COL_EXAM - COL_TOTAL - COL_GRADE; // ~147
+
+  const tableColX = [
+    ML,
+    ML + COL_SUBJECT,
+    ML + COL_SUBJECT + COL_CA,
+    ML + COL_SUBJECT + COL_CA + COL_EXAM,
+    ML + COL_SUBJECT + COL_CA + COL_EXAM + COL_TOTAL,
+    ML + COL_SUBJECT + COL_CA + COL_EXAM + COL_TOTAL + COL_GRADE,
+  ];
+  const REMARKS_X = tableColX[5]; // x where Remarks column starts
+
+  // Right info column aligns at the Remarks column start
+  const INFO_LEFT_W  = REMARKS_X - ML - 4;  // left info column width
+  const INFO_RIGHT_X = REMARKS_X;            // right info column starts exactly at Remarks
+  const INFO_RIGHT_W = ML + CW - REMARKS_X; // remaining width
 
   // ── WATERMARK ────────────────────────────────────────────────────────────────
   const logoUrl = school && school.logo ? school.logo : null;
   const logoPath = resolveLogoPath(logoUrl);
   if (logoPath) {
     try {
-      const wSize = 380;
+      const wSize = 360;
       doc.save();
       doc.opacity(0.11);
       doc.image(logoPath, (PW - wSize) / 2, (PH - wSize) / 2 - 20, { width: wSize, height: wSize });
@@ -142,7 +162,6 @@ async function generateReportCard(res, params) {
       doc.circle(logoCX, logoCY, logoSize / 2).lineWidth(0.7).strokeColor('#bbb').stroke();
     } catch (e) { /* skip */ }
   }
-
   Y += logoSize + 5;
 
   // ── SCHOOL NAME ───────────────────────────────────────────────────────────────
@@ -150,10 +169,10 @@ async function generateReportCard(res, params) {
     .text(schoolDisplayName, ML, Y, { align: 'center', width: CW, lineBreak: false });
   Y += 17;
 
-  // Address on its own line (wrapping allowed), phone on a second line if present
   doc.fontSize(7.5).font('Helvetica').fillColor('#555')
     .text(schoolAddress, ML, Y, { align: 'center', width: CW, lineBreak: false });
   Y += 12;
+
   if (schoolPhone) {
     doc.fontSize(7.5).font('Helvetica').fillColor('#555')
       .text(`Tel: ${schoolPhone}`, ML, Y, { align: 'center', width: CW, lineBreak: false });
@@ -164,83 +183,83 @@ async function generateReportCard(res, params) {
     .text('STUDENT REPORT CARD', ML, Y, { align: 'center', width: CW, lineBreak: false });
   Y += 13;
 
-  doc.moveTo(ML, Y).lineTo(PW - MR, Y).lineWidth(1).strokeColor('#555').stroke();
+  doc.moveTo(ML, Y).lineTo(ML + CW, Y).lineWidth(1).strokeColor('#555').stroke();
   Y += 8;
 
   // ── STUDENT INFO ─────────────────────────────────────────────────────────────
-  // Left column: Name, Class  |  Right column: Student ID, Gender, Term
   const yearMatch = session ? session.match(/\d{4}[\/-]\d{4}/) : null;
   const sessionLabel = yearMatch ? `${yearMatch[0]} Academic Session` : 'Academic Session';
 
-  const infoLeftW  = CW * 0.46;   // name and class are longer
-  const infoRightW = CW * 0.50;
-  const c1 = ML;
-  const c2 = ML + CW * 0.50;      // right column starts at 50% mark
-
-  const infoH = 13.5;
+  const infoH = 14;
 
   const infoField = (lbl, val, x, w) => {
-    doc.font('Helvetica').fontSize(8.5).fillColor('#666')
+    doc.font('Helvetica').fontSize(8.5).fillColor('#555')
       .text(`${lbl}:`, x, Y, { continued: true, lineBreak: false, width: w })
       .font('Helvetica-Bold').fillColor('#111')
       .text(` ${val || '-'}`, { lineBreak: false });
   };
 
-  // Row 1
-  infoField('Name',    student.fullName,      c1, infoLeftW);
-  infoField('Student ID', student.studentID,  c2, infoRightW);
+  infoField('Name',       student.fullName,      ML,           INFO_LEFT_W);
+  infoField('Student ID', student.studentID,     INFO_RIGHT_X, INFO_RIGHT_W);
   Y += infoH;
 
-  // Row 2
-  infoField('Class',   student.currentClass,  c1, infoLeftW);
-  infoField('Gender',  student.gender || '-', c2, infoRightW);
+  infoField('Class',   student.currentClass,    ML,           INFO_LEFT_W);
+  infoField('Gender',  student.gender || '-',   INFO_RIGHT_X, INFO_RIGHT_W);
   Y += infoH;
 
-  // Row 3 (session spans full width left; term on right)
-  infoField('Session', sessionLabel,          c1, infoLeftW);
-  infoField('Term',    term,                  c2, infoRightW);
+  infoField('Session', sessionLabel,            ML,           INFO_LEFT_W);
+  infoField('Term',    term,                    INFO_RIGHT_X, INFO_RIGHT_W);
   Y += infoH;
 
   doc.fillColor('black');
-  Y += 10; // gap between info and table
+  Y += 12; // gap before table
 
   // ── RESULTS TABLE ─────────────────────────────────────────────────────────────
-  const cols = [
-    { label: 'Subject',    width: 156 },
-    { label: 'CA (40)',    width: 57  },
-    { label: 'Exam (60)', width: 57  },
-    { label: 'Total',      width: 50  },
-    { label: 'Grade',      width: 50  },
-    { label: 'Remark',     width: 149 },
+  const tableCols = [
+    { label: 'Subjects',   width: COL_SUBJECT },
+    { label: 'CA (40)',    width: COL_CA      },
+    { label: 'Exam (60)', width: COL_EXAM    },
+    { label: 'Total',      width: COL_TOTAL   },
+    { label: 'Grade',      width: COL_GRADE   },
+    { label: 'Remarks',    width: COL_REMARKS },
   ];
 
-  // Header background
-  doc.rect(ML, Y, CW, 16).fill('#e8edf4');
+  // How tall should each data row be? Spread rows to fill page nicely.
+  // Remaining page height after table header up to ~Y+730
+  const tableHeaderH = 17;
+  const bottomReserve = 115; // space for summary + comments + signatures
+  const availableForRows = PH - Y - tableHeaderH - bottomReserve;
+  const rowCount = results.length || 1;
+  // Row height between 15 and 26 — stretch rows to fill available space
+  const rowH = Math.min(26, Math.max(15, Math.floor(availableForRows / rowCount)));
+
+  // Header
+  doc.rect(ML, Y, CW, tableHeaderH).fill('#dde3ed');
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#111');
-  let cx = ML + 4;
-  cols.forEach((col) => {
-    doc.text(col.label, cx, Y + 3, { width: col.width - 4, lineBreak: false });
-    cx += col.width;
+  tableCols.forEach((col, i) => {
+    doc.text(col.label, tableColX[i] + 4, Y + 4, { width: col.width - 6, lineBreak: false });
   });
-  Y += 16;
-  doc.moveTo(ML, Y).lineTo(PW - MR, Y).lineWidth(0.5).strokeColor('#aaa').stroke();
+  Y += tableHeaderH;
+  doc.moveTo(ML, Y).lineTo(ML + CW, Y).lineWidth(0.5).strokeColor('#aaa').stroke();
 
-  // Rows — alternating light shade
+  // Data rows with calculated row height
   results.forEach((r, idx) => {
-    if (idx % 2 === 0) doc.rect(ML, Y, CW, 13).fill('#f8f9fb');
+    if (idx % 2 === 0) doc.rect(ML, Y, CW, rowH).fill('#f7f9fb');
     doc.font('Helvetica').fontSize(8.5).fillColor('#111');
-    cx = ML + 4;
-    [r.subject, r.ca1 ?? 0, r.exam ?? 0, r.total ?? 0, r.grade || '-', r.remark || '-'].forEach((val, i) => {
-      doc.text(String(val), cx, Y + 2, { width: cols[i].width - 4, lineBreak: false });
-      cx += cols[i].width;
+    const vals = [r.subject, r.ca1 ?? 0, r.exam ?? 0, r.total ?? 0, r.grade || '-', r.remark || '-'];
+    vals.forEach((val, i) => {
+      doc.text(String(val), tableColX[i] + 4, Y + (rowH - 9) / 2 + 1, {
+        width: tableCols[i].width - 6,
+        lineBreak: false
+      });
     });
-    Y += 13;
+    Y += rowH;
   });
 
-  doc.moveTo(ML, Y).lineTo(PW - MR, Y).lineWidth(0.5).strokeColor('#aaa').stroke();
-  Y += 10;
+  doc.moveTo(ML, Y).lineTo(ML + CW, Y).lineWidth(0.5).strokeColor('#aaa').stroke();
+  Y += 12;
 
-  // ── SUMMARY ROW: Total Score | Average | Promoted To ─────────────────────────
+  // ── SUMMARY: Total Score | Average (center) | Promoted To (right) ─────────────
   const totalScore = results.reduce((s, r) => s + (Number(r.total) || 0), 0);
   const average    = results.length > 0 ? (totalScore / results.length).toFixed(1) : '0';
   const nextClass  = getNextClass(student.currentClass);
@@ -248,53 +267,51 @@ async function generateReportCard(res, params) {
 
   const sumColW = CW / 3;
   doc.font('Helvetica-Bold').fontSize(9).fillColor('#111');
-  doc.text(`Total Score: ${totalScore}`, ML,            Y, { width: sumColW, align: 'left',   lineBreak: false });
-  doc.text(`Average: ${average}%`,       ML + sumColW,  Y, { width: sumColW, align: 'center', lineBreak: false });
-  doc.text(promoText,                    ML + sumColW*2, Y, { width: sumColW, align: 'right',  lineBreak: false });
+  doc.text(`Total Score: ${totalScore}`, ML,              Y, { width: sumColW, align: 'left',   lineBreak: false });
+  doc.text(`Average: ${average}%`,       ML + sumColW,    Y, { width: sumColW, align: 'center', lineBreak: false });
+  doc.text(promoText,                    ML + sumColW * 2, Y, { width: sumColW, align: 'right',  lineBreak: false });
   Y += 18;
 
-  // ── COMMENTS (side by side, label: text inline) ───────────────────────────────
-  const cmtColW = CW / 2 - 8;
-  const cmtLeft = ML;
-  const cmtRight = ML + CW / 2 + 8;
+  // ── COMMENTS: side by side, label inline before text ─────────────────────────
+  // Left comment aligns from ML; right comment aligns from INFO_RIGHT_X (= REMARKS_X)
+  const cmtLeftW  = INFO_LEFT_W;
+  const cmtRightW = INFO_RIGHT_W;
 
-  const tcText = student.teacherComment || 'Keep up the good work.';
+  const tcText = student.teacherComment   || 'Keep up the good work.';
   const dsText = student.principalComment || 'Satisfactory progress.';
 
-  // Teacher comment
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
-    .text("Class Teacher's Comment: ", cmtLeft, Y, { continued: true, lineBreak: false, width: cmtColW })
+    .text("Class Teacher's Comment: ", ML, Y, { continued: true, lineBreak: false, width: cmtLeftW })
     .font('Helvetica').fillColor('#111')
-    .text(tcText, { lineBreak: false });
+    .text(tcText, { lineBreak: false, width: cmtLeftW });
 
-  // Director of Studies comment (same Y)
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
-    .text("Director of Studies Comment: ", cmtRight, Y, { continued: true, lineBreak: false, width: cmtColW })
+    .text("Director of Studies Comment: ", INFO_RIGHT_X, Y, { continued: true, lineBreak: false, width: cmtRightW })
     .font('Helvetica').fillColor('#111')
-    .text(dsText, { lineBreak: false });
+    .text(dsText, { lineBreak: false, width: cmtRightW });
 
-  const tcH = doc.heightOfString(`Class Teacher's Comment: ${tcText}`, { width: cmtColW });
-  const dsH = doc.heightOfString(`Director of Studies Comment: ${dsText}`, { width: cmtColW });
-  Y += Math.max(tcH, dsH) + 20;
+  const tcH = doc.heightOfString(`Class Teacher's Comment: ${tcText}`, { width: cmtLeftW });
+  const dsH = doc.heightOfString(`Director of Studies Comment: ${dsText}`, { width: cmtRightW });
+  Y += Math.max(tcH, dsH) + 22;
 
   // ── SIGNATURE ROW ─────────────────────────────────────────────────────────────
-  const sigColW = CW / 3;
+  const sigColW    = CW / 3;
   const s1 = ML;
   const s2 = ML + sigColW;
   const s3 = ML + sigColW * 2;
-
   const centerLabel = secondary ? 'VP Academics' : 'Headmistress';
 
-  // Signature image sits ABOVE the line for Board of Directors
+  // Signature image above the Director of Studies line
   const sigImgH = 26;
   const lineY   = Y + sigImgH + 4;
 
   if (signatureBuffer) {
     try {
-      const sigW = 80;
-      const sigImgX = s3 + (sigColW - sigW) / 2;
-      doc.image(signatureBuffer, sigImgX, Y, { width: sigW, height: sigImgH, fit: [sigW, sigImgH] });
-    } catch (e) { /* skip signature image */ }
+      const sigW = 78;
+      doc.image(signatureBuffer, s3 + (sigColW - sigW) / 2, Y, {
+        width: sigW, height: sigImgH, fit: [sigW, sigImgH]
+      });
+    } catch (e) { /* skip */ }
   }
 
   const pad = 10;
@@ -305,9 +322,9 @@ async function generateReportCard(res, params) {
 
   const lblY = lineY + 4;
   doc.font('Helvetica').fontSize(8.5).fillColor('#333');
-  doc.text('Class Teacher',       s1, lblY, { width: sigColW, align: 'center', lineBreak: false });
-  doc.text(centerLabel,           s2, lblY, { width: sigColW, align: 'center', lineBreak: false });
-  doc.text('Board of Directors',  s3, lblY, { width: sigColW, align: 'center', lineBreak: false });
+  doc.text('Class Teacher',      s1, lblY, { width: sigColW, align: 'center', lineBreak: false });
+  doc.text(centerLabel,          s2, lblY, { width: sigColW, align: 'center', lineBreak: false });
+  doc.text('Director of Studies', s3, lblY, { width: sigColW, align: 'center', lineBreak: false });
 
   doc.end();
 }
