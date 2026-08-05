@@ -34,12 +34,11 @@ function generateReportCard(res, params) {
   doc.pipe(res);
 
   // Campus-specific header
-  const printableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-  doc.fontSize(18).font('Helvetica-Bold').text(header.name.toUpperCase(), { align: 'center', width: printableWidth });
+  doc.fontSize(18).font('Helvetica-Bold').text(header.name.toUpperCase(), { align: 'center' });
   doc.moveDown(0.2);
-  doc.fontSize(9).font('Helvetica').text(header.address, { align: 'center', width: printableWidth, lineGap: 2 });
-  doc.moveDown(0.4);
-  doc.fontSize(11).font('Helvetica-Bold').text(`${campus} Campus - Student Report Card`, { align: 'center', width: printableWidth });
+  doc.fontSize(9).font('Helvetica').text(header.address, { align: 'center', width: 520, lineGap: 3 });
+  doc.moveDown(0.3);
+  doc.fontSize(11).font('Helvetica-Bold').text(`${campus} Campus - Student Report Card`, { align: 'center' });
   doc.moveDown(1);
 
   // Student info
@@ -48,7 +47,7 @@ function generateReportCard(res, params) {
   doc.text(`Name: ${student.fullName}`, 40, infoY);
   doc.text(`Student ID: ${student.studentID}`, 320, infoY);
   doc.text(`Class: ${student.currentClass}`, 40, infoY + 18);
-  doc.text(`Level: ${classLevel.level}`, 320, infoY + 18);
+  doc.text(`Gender: ${student.gender || 'N/A'}`, 320, infoY + 18);
   doc.text(`Session: ${session}`, 40, infoY + 36);
   doc.text(`Term: ${term}`, 320, infoY + 36);
   doc.moveDown(3);
@@ -97,21 +96,20 @@ function generateReportCard(res, params) {
   const subjectCount = results.length;
   const average = subjectCount > 0 ? (totalScore / subjectCount).toFixed(2) : '0';
   doc.font('Helvetica-Bold').fontSize(10);
-  const summaryY = doc.y;
-  doc.text(`Total Score: ${totalScore}`, 40, summaryY);
-  doc.text(`Average: ${average}%`, 175, summaryY);
+  doc.text(`Total Score: ${totalScore}`, 40, doc.y);
+  doc.text(`Average: ${average}%`, 170, doc.y);
   if (classPosition) {
-    doc.text(`Class Position: ${classPosition}`, 305, summaryY);
+    doc.text(`Class Position: ${classPosition}`, 300, doc.y);
   }
   doc.moveDown(1);
 
-  // Comments - label and value on the same line
-  const commentY1 = doc.y;
-  doc.font('Helvetica-Bold').fontSize(9).text("Class Teacher's Comment: ", 40, commentY1, { continued: true, width: 300 });
+  // Comments - label and value on the same row
+  const teacherCommentY = doc.y;
+  doc.font('Helvetica-Bold').fontSize(9).text("Class Teacher's Comment: ", 40, teacherCommentY, { continued: true, width: 520 });
   doc.font('Helvetica').text(student.teacherComment || 'Keep up the good work.');
-  doc.moveDown(0.5);
-  const commentY2 = doc.y;
-  doc.font('Helvetica-Bold').text("Director of Studies Comment: ", 40, commentY2, { continued: true, width: 300 });
+  doc.moveDown(0.8);
+  const directorCommentY = doc.y;
+  doc.font('Helvetica-Bold').text("Director of Studies Comment: ", 40, directorCommentY, { continued: true, width: 520 });
   doc.font('Helvetica').text(student.principalComment || 'Satisfactory progress.');
   doc.moveDown(2);
 
