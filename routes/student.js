@@ -355,7 +355,7 @@ router.get('/results', async (req, res) => {
     if (selectedTerm) filter.$and.push({ term: selectedTerm });
     if (selectedSession) filter.$and.push({ session: selectedSession });
     
-    let results = await Result.find(filter).sort({ subject: 1 });
+    let results = deduplicateResults(await Result.find(filter).sort({ subject: 1 }));
 
     if (!results.length) {
       const fallbackFilter = {
@@ -364,7 +364,7 @@ router.get('/results', async (req, res) => {
       if (campus) fallbackFilter.$and.push({ campus });
       if (selectedTerm) fallbackFilter.$and.push({ term: selectedTerm });
       if (selectedSession) fallbackFilter.$and.push({ session: selectedSession });
-      results = await Result.find(fallbackFilter).sort({ subject: 1 });
+      results = deduplicateResults(await Result.find(fallbackFilter).sort({ subject: 1 }));
     }
     
     // Calculate subject positions
