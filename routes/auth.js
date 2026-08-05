@@ -40,7 +40,7 @@ router.get('/login', (req, res) => {
   });
 });
 
-// Login POST - COMPLETELY FIXED for student authentication
+// Login POST
 router.post('/login', async (req, res) => {
   const { email, password, loginType, campus } = req.body;
 
@@ -53,16 +53,35 @@ router.post('/login', async (req, res) => {
       const loginIdentifier = (email || '').trim();
       const escapedEmail = loginIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-      console.log('Attempting student login with parent contact:', loginIdentifier);
+      // Build phone number variants to handle different storage formats
+      // e.g. "08012345678", "8012345678", "+2348012345678", "2348012345678"
+      const phoneVariants = [loginIdentifier];
+      const digitsOnly = loginIdentifier.replace(/\D/g, '');
+      if (digitsOnly && digitsOnly !== loginIdentifier) phoneVariants.push(digitsOnly);
+      if (digitsOnly.startsWith('234') && digitsOnly.length > 10) {
+        phoneVariants.push('0' + digitsOnly.slice(3));
+        phoneVariants.push(digitsOnly.slice(3));
+      }
+      if (digitsOnly.length === 10 && !digitsOnly.startsWith('0')) {
+        phoneVariants.push('0' + digitsOnly);
+      }
+      if (digitsOnly.startsWith('0') && digitsOnly.length === 11) {
+        phoneVariants.push('+234' + digitsOnly.slice(1));
+        phoneVariants.push('234' + digitsOnly.slice(1));
+      }
+      const uniquePhoneVariants = [...new Set(phoneVariants)];
+
+      console.log('Attempting student login with:', loginIdentifier, '| phone variants:', uniquePhoneVariants);
+
       const student = await Student.findOne({
         campus: selectedCampus,
         $or: [
-          { parentPhone: loginIdentifier },
+          { parentPhone: { $in: uniquePhoneVariants } },
           { parentEmail: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
           { studentID: loginIdentifier }
         ]
       });
-      
+
       if (!student) {
         console.log('Student login failed: Student not found');
         return res.render('pages/login', {
@@ -71,17 +90,11 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      console.log('Student found:', {
-        id: student.studentID,
-        name: student.fullName,
-        isActive: student.isActive
-      });
+      console.log('Student found:', { id: student.studentID, name: student.fullName, isActive: student.isActive });
 
-      // FIXED: Use comparePassword method correctly
-      console.log('Checking password...');
       const isValidPassword = await student.comparePassword(password);
       console.log('Password validation result:', isValidPassword);
-      
+
       if (!isValidPassword) {
         console.log('Student login failed: Invalid password');
         return res.render('pages/login', {
@@ -98,7 +111,6 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      // Update last login timestamp for the student
       student.lastLogin = new Date();
       await student.save();
 
@@ -116,28 +128,26 @@ router.post('/login', async (req, res) => {
       delete req.session.studentToken;
 
       console.log('Student login successful');
-      
-      // Get announcements for popup
+
       const announcements = await Announcement.find({
         isActive: true,
         targetAudience: { $in: ['all', 'students'] },
         campus: selectedCampus
       }).sort({ createdAt: -1 }).limit(3);
-      
+
       req.session.announcements = announcements;
-      
+
       return res.redirect('/student/portal');
     } else {
-      // Staff login — try selected campus first, then fall back to any campus
-      // so a single admin account can access both campuses
+      // Staff login
       console.log('Looking for staff user with email:', email, 'campus:', selectedCampus);
       let user = await User.findOne({ email, campus: selectedCampus });
-      
+
       if (!user) {
         console.log('User not found in', selectedCampus, 'campus, trying any campus');
         user = await User.findOne({ email });
       }
-      
+
       if (!user) {
         console.log('Staff login failed: User not found');
         return res.render('pages/login', {
@@ -146,16 +156,11 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      console.log('Found user:', {
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isActive: user.isActive
-      });
+      console.log('Found user:', { name: user.name, email: user.email, role: user.role, isActive: user.isActive });
 
       const isValidPassword = await user.comparePassword(password);
       console.log('Password validation result:', isValidPassword);
-      
+
       if (!isValidPassword) {
         console.log('Staff login failed: Invalid password');
         return res.render('pages/login', {
@@ -172,7 +177,6 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      // Update last login timestamp for the staff user
       user.lastLogin = new Date();
       await user.save();
 
