@@ -34,9 +34,9 @@ function generateReportCard(res, params) {
   doc.pipe(res);
 
   // Campus-specific header
-  doc.fontSize(18).font('Helvetica-Bold').text(header.name.toUpperCase(), { align: 'center' });
+  doc.fontSize(18).font('Helvetica-Bold').text(header.name, { align: 'center' });
   doc.moveDown(0.2);
-  doc.fontSize(9).font('Helvetica').text(header.address, { align: 'center', width: 520, lineGap: 3 });
+  doc.fontSize(9).font('Helvetica').text(header.address, { align: 'center', width: 500 });
   doc.moveDown(0.3);
   doc.fontSize(11).font('Helvetica-Bold').text(`${campus} Campus - Student Report Card`, { align: 'center' });
   doc.moveDown(1);
@@ -47,7 +47,7 @@ function generateReportCard(res, params) {
   doc.text(`Name: ${student.fullName}`, 40, infoY);
   doc.text(`Student ID: ${student.studentID}`, 320, infoY);
   doc.text(`Class: ${student.currentClass}`, 40, infoY + 18);
-  doc.text(`Gender: ${student.gender || 'N/A'}`, 320, infoY + 18);
+  doc.text(`Level: ${classLevel.level}`, 320, infoY + 18);
   doc.text(`Session: ${session}`, 40, infoY + 36);
   doc.text(`Term: ${term}`, 320, infoY + 36);
   doc.moveDown(3);
@@ -97,19 +97,19 @@ function generateReportCard(res, params) {
   const average = subjectCount > 0 ? (totalScore / subjectCount).toFixed(2) : '0';
   doc.font('Helvetica-Bold').fontSize(10);
   doc.text(`Total Score: ${totalScore}`, 40, doc.y);
-  doc.text(`Average: ${average}%`, 170, doc.y);
+  doc.text(`Average: ${average}%`, 200, doc.y);
   if (classPosition) {
-    doc.text(`Class Position: ${classPosition}`, 300, doc.y);
+    doc.text(`Class Position: ${classPosition}`, 340, doc.y);
   }
   doc.moveDown(1);
 
-  // Comments - label and value on the same row
-  const teacherCommentY = doc.y;
-  doc.font('Helvetica-Bold').fontSize(9).text("Class Teacher's Comment: ", 40, teacherCommentY, { continued: true, width: 520 });
+  // Comments
+  doc.font('Helvetica-Bold').text("Class Teacher's Comment:", { underline: true });
+  doc.moveDown(0.2);
   doc.font('Helvetica').text(student.teacherComment || 'Keep up the good work.');
-  doc.moveDown(0.8);
-  const directorCommentY = doc.y;
-  doc.font('Helvetica-Bold').text("Director of Studies Comment: ", 40, directorCommentY, { continued: true, width: 520 });
+  doc.moveDown(1);
+  doc.font('Helvetica-Bold').text("Principal's Comment:", { underline: true });
+  doc.moveDown(0.2);
   doc.font('Helvetica').text(student.principalComment || 'Satisfactory progress.');
   doc.moveDown(2);
 
