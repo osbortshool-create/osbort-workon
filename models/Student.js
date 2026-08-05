@@ -9,33 +9,6 @@ function normalizeContactValue(value) {
   return value === undefined || value === null ? null : value;
 }
 
-function buildLoginLookupValues(identifier) {
-  if (typeof identifier !== 'string') return [];
-
-  const raw = identifier.trim();
-  if (!raw) return [];
-
-  const variants = new Set();
-  const lower = raw.toLowerCase();
-  const compact = raw.replace(/\s+/g, '');
-  const digitsOnly = raw.replace(/\D/g, '');
-
-  variants.add(raw);
-  variants.add(lower);
-  variants.add(compact);
-  variants.add(digitsOnly);
-
-  if (digitsOnly.length === 11 && digitsOnly.startsWith('0')) {
-    variants.add(`234${digitsOnly.slice(1)}`);
-  }
-
-  if (digitsOnly.length === 10) {
-    variants.add(`234${digitsOnly}`);
-  }
-
-  return Array.from(variants).filter(Boolean);
-}
-
 const archivedSessionSchema = new mongoose.Schema({
   sessionName: String,
   className: String,
@@ -119,17 +92,7 @@ studentSchema.pre('updateOne', async function (next) {
 });
 
 studentSchema.methods.comparePassword = async function (candidatePassword) {
-  if (!candidatePassword || !this.password) return false;
-
-  if (typeof this.password === 'string' && this.password.startsWith('$2')) {
-    return bcrypt.compare(candidatePassword, this.password);
-  }
-
-  return String(this.password) === String(candidatePassword);
-};
-
-studentSchema.statics.buildLoginLookupValues = function (identifier) {
-  return buildLoginLookupValues(identifier);
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 studentSchema.statics.ensureMissingStudentIds = async function (campus = null) {
