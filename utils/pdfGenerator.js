@@ -272,29 +272,24 @@ async function generateReportCard(res, params) {
   doc.text(promoText,                     ML + sumColW * 2, Y, { width: sumColW,   align: 'right',  lineBreak: false });
   Y += 18;
 
-  // ── COMMENTS: render label and value at exact coordinates ───────────────────
+  // ── COMMENTS ─────────────────────────────────────────────────────────────────
   const tcText = student.teacherComment   || 'Keep up the good work.';
   const dsText = student.principalComment || 'Satisfactory progress.';
 
   const tcLabel = "Class Teacher's Comment: ";
   const dsLabel = "Director of Studies Comment: ";
 
-  // Measure label widths so we can place the value text at the exact right X
-  doc.font('Helvetica-Bold').fontSize(8.5);
-  const tcLabelW = doc.widthOfString(tcLabel);
-  const dsLabelW = doc.widthOfString(dsLabel);
-
-  // Left side: label then value
+  // Use continued:true so both label and value stay on the exact same line.
+  // Explicit x,y on every call prevents PDFKit's internal cursor from drifting.
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
-    .text(tcLabel, ML, Y, { lineBreak: false, width: LEFT_COL_W });
-  doc.font('Helvetica').fontSize(8.5).fillColor('#111')
-    .text(tcText, ML + tcLabelW, Y, { lineBreak: false, width: LEFT_COL_W - tcLabelW });
+    .text(tcLabel, ML, Y, { continued: true, lineBreak: false })
+    .font('Helvetica').fillColor('#111')
+    .text(tcText, { lineBreak: false });
 
-  // Right side: label then value — both anchored at RIGHT_COL_X
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
-    .text(dsLabel, RIGHT_COL_X, Y, { lineBreak: false, width: RIGHT_COL_W });
-  doc.font('Helvetica').fontSize(8.5).fillColor('#111')
-    .text(dsText, RIGHT_COL_X + dsLabelW, Y, { lineBreak: false, width: RIGHT_COL_W - dsLabelW });
+    .text(dsLabel, RIGHT_COL_X, Y, { continued: true, lineBreak: false })
+    .font('Helvetica').fillColor('#111')
+    .text(dsText, { lineBreak: false });
 
   const tcH = doc.heightOfString(tcLabel + tcText, { width: LEFT_COL_W });
   const dsH = doc.heightOfString(dsLabel + dsText, { width: RIGHT_COL_W });
