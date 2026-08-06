@@ -46,8 +46,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    mongoUrl: process.env.MONGODB_URI
   }),
   cookie: {
     secure: false, // Set to true in production with HTTPS
