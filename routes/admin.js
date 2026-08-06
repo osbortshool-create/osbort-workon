@@ -1554,7 +1554,13 @@ router.post('/school', upload.single('logo'), async (req, res) => {
     };
 
     if (req.file) {
-      updateData.logo = `/uploads/${req.file.filename}`;
+      // Store logo as a base64 data URL directly in the database so it
+      // never disappears when the server filesystem resets.
+      const mime = req.file.mimetype || 'image/png';
+      const b64 = req.file.buffer
+        ? req.file.buffer.toString('base64')
+        : require('fs').readFileSync(req.file.path).toString('base64');
+      updateData.logo = `data:${mime};base64,${b64}`;
     }
 
     const school = await School.findOne({ campus: req.session.campus });

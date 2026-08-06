@@ -10,14 +10,14 @@ const CAMPUS_FALLBACK = {
     address: 'Osbot Road, Aso Ayegunle, Ado-Ekiti, Ekiti State'
   },
   Lagos: {
-    name: 'Osbot Group of Schools, Lagos State',
+    name: 'OSBOT GROUP OF SCHOOLS, LAGOS STATE',
     address: '38 Unity Road, Isale Odo, Eleyin B/Stop, Ikole-Odunsi via Ipaja, Lagos State'
   }
 };
 
 const CAMPUS_DISPLAY_NAME = {
   Ekiti: 'OSBOT INTERNATIONAL SCHOOLS, EKITI STATE',
-  Lagos: 'Osbot Group of Schools, Lagos State'
+  Lagos: 'OSBOT GROUP OF SCHOOLS, LAGOS STATE'
 };
 
 const PROMOTION_MAP = {
@@ -122,15 +122,29 @@ async function generateReportCard(res, params) {
   const RIGHT_COL_W = ML + CW - RIGHT_COL_X; // width to right margin
   const LEFT_COL_W  = RIGHT_COL_X - ML - 6;  // left info column width
 
-  // ── WATERMARK ────────────────────────────────────────────────────────────────
+  // ── Resolve logo — supports base64 data URLs, local paths, or nothing ────────
   const logoUrl = school && school.logo ? school.logo : null;
-  const logoPath = resolveLogoPath(logoUrl);
-  if (logoPath) {
+  let logoSrc = null; // will be a Buffer (base64) or a local file path string
+  if (logoUrl) {
+    if (logoUrl.startsWith('data:')) {
+      // Base64 data URL stored in the database
+      try {
+        const b64 = logoUrl.split(',')[1];
+        if (b64) logoSrc = Buffer.from(b64, 'base64');
+      } catch (e) { /* skip */ }
+    } else {
+      const p = resolveLogoPath(logoUrl);
+      if (p) logoSrc = p;
+    }
+  }
+
+  // ── WATERMARK ────────────────────────────────────────────────────────────────
+  if (logoSrc) {
     try {
       const wSize = 360;
       doc.save();
       doc.opacity(0.11);
-      doc.image(logoPath, (PW - wSize) / 2, (PH - wSize) / 2 - 20, { width: wSize, height: wSize });
+      doc.image(logoSrc, (PW - wSize) / 2, (PH - wSize) / 2 - 20, { width: wSize, height: wSize });
       doc.restore();
     } catch (e) { /* skip */ }
   }
@@ -141,11 +155,11 @@ async function generateReportCard(res, params) {
   const logoCX = PW / 2;
   const logoCY = Y + logoSize / 2;
 
-  if (logoPath) {
+  if (logoSrc) {
     try {
       doc.save();
       doc.circle(logoCX, logoCY, logoSize / 2).clip();
-      doc.image(logoPath, logoCX - logoSize / 2, Y, { width: logoSize, height: logoSize });
+      doc.image(logoSrc, logoCX - logoSize / 2, Y, { width: logoSize, height: logoSize });
       doc.restore();
       doc.circle(logoCX, logoCY, logoSize / 2).lineWidth(0.7).strokeColor('#bbb').stroke();
     } catch (e) { /* skip */ }
@@ -158,9 +172,12 @@ async function generateReportCard(res, params) {
     .text(schoolDisplayName, ML, Y, { align: 'center', width: CW, lineBreak: false });
   Y += 17;
 
+  // Address: measure how many lines it takes, then phone on its own line below
+  const addrOptions = { align: 'center', width: CW };
+  const addrLines = Math.ceil(doc.fontSize(7.5).font('Helvetica').widthOfString(schoolAddress) / CW);
   doc.fontSize(7.5).font('Helvetica').fillColor('#555')
-    .text(schoolAddress, ML, Y, { align: 'center', width: CW, lineBreak: false });
-  Y += 12;
+    .text(schoolAddress, ML, Y, addrOptions);
+  Y += addrLines > 1 ? 20 : 12;
 
   if (schoolPhone) {
     doc.fontSize(7.5).font('Helvetica').fillColor('#555')
@@ -255,24 +272,32 @@ async function generateReportCard(res, params) {
   doc.text(promoText,                     ML + sumColW * 2, Y, { width: sumColW,   align: 'right',  lineBreak: false });
   Y += 18;
 
-  // ── COMMENTS: side by side, label + text inline ───────────────────────────────
-  // Left comment starts at ML (same as Name/Class/Session/Subjects)
-  // Right comment starts at RIGHT_COL_X (same as Student ID/Gender/Term/Remarks)
+  // ── COMMENTS: render label and value at exact coordinates ───────────────────
   const tcText = student.teacherComment   || 'Keep up the good work.';
   const dsText = student.principalComment || 'Satisfactory progress.';
 
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
-    .text("Class Teacher's Comment: ", ML, Y, { continued: true, lineBreak: false, width: LEFT_COL_W })
-    .font('Helvetica').fillColor('#111')
-    .text(tcText, { lineBreak: false });
+  const tcLabel = "Class Teacher's Comment: ";
+  const dsLabel = "Director of Studies Comment: ";
 
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
-    .text("Director of Studies Comment: ", RIGHT_COL_X, Y, { continued: true, lineBreak: false, width: RIGHT_COL_W })
-    .font('Helvetica').fillColor('#111')
-    .text(dsText, { lineBreak: false });
+  // Measure label widths so we can place the value text at the exact right X
+  doc.font('Helvetica-Bold').fontSize(8.5);
+  const tcLabelW = doc.widthOfString(tcLabel);
+  const dsLabelW = doc.widthOfString(dsLabel);
 
-  const tcH = doc.heightOfString(`Class Teacher's Comment: ${tcText}`, { width: LEFT_COL_W });
-  const dsH = doc.heightOfString(`Director of Studies Comment: ${dsText}`, { width: RIGHT_COL_W });
+  // Left side: label then value
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
+    .text(tcLabel, ML, Y, { lineBreak: false, width: LEFT_COL_W });
+  doc.font('Helvetica').fontSize(8.5).fillColor('#111')
+    .text(tcText, ML + tcLabelW, Y, { lineBreak: false, width: LEFT_COL_W - tcLabelW });
+
+  // Right side: label then value — both anchored at RIGHT_COL_X
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#333')
+    .text(dsLabel, RIGHT_COL_X, Y, { lineBreak: false, width: RIGHT_COL_W });
+  doc.font('Helvetica').fontSize(8.5).fillColor('#111')
+    .text(dsText, RIGHT_COL_X + dsLabelW, Y, { lineBreak: false, width: RIGHT_COL_W - dsLabelW });
+
+  const tcH = doc.heightOfString(tcLabel + tcText, { width: LEFT_COL_W });
+  const dsH = doc.heightOfString(dsLabel + dsText, { width: RIGHT_COL_W });
   Y += Math.max(tcH, dsH) + 22;
 
   // ── SIGNATURE ROW ─────────────────────────────────────────────────────────────
