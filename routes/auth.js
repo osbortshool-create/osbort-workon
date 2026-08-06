@@ -137,6 +137,10 @@ router.post('/login', async (req, res) => {
 
       req.session.announcements = announcements;
 
+      await new Promise((resolve, reject) => {
+        req.session.save(err => err ? reject(err) : resolve());
+      });
+
       return res.redirect('/student/portal');
     } else {
       // Staff login
@@ -180,16 +184,21 @@ router.post('/login', async (req, res) => {
       user.lastLogin = new Date();
       await user.save();
 
+      const normalizedUserRole = String(user.role || '').toLowerCase().trim();
       req.session.user = {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: normalizedUserRole,
         assignedSubjects: user.assignedSubjects,
         assignedClasses: user.assignedClasses,
         lastLogin: user.lastLogin,
         campus: selectedCampus
       };
+
+      await new Promise((resolve, reject) => {
+        req.session.save(err => err ? reject(err) : resolve());
+      });
 
       console.log('Staff login successful, redirecting to dashboard');
       return res.redirect('/dashboard');
