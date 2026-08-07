@@ -10,12 +10,11 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 router.get('/', requireAuth, async (req, res) => {
   try {
     const user = req.session.user;
-    const role = String(user.role || '').toLowerCase().trim();
     
     // Get current session
     const currentSession = await Session.getActiveSession(req.session.campus);
     
-    if (role === 'admin') {
+    if (user.role === 'admin') {
       // Admin Dashboard
       const stats = await getAdminStats(req.session.campus);
       res.render('pages/admin-dashboard', {

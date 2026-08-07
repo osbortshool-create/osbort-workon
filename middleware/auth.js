@@ -11,8 +11,7 @@ function requireRole(roles) {
       return res.redirect('/login');
     }
     const allowed = Array.isArray(roles) ? roles : [roles];
-    const userRole = String(req.session.user.role || '').toLowerCase().trim();
-    if (!allowed.includes(userRole)) {
+    if (!allowed.includes(req.session.user.role)) {
       return res.status(403).render('pages/error', {
         title: 'Access Denied',
         message: 'You do not have permission to access this page.',
