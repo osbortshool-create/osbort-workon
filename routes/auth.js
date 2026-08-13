@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
       isActive: true,
       targetAudience: { $in: ['all'] }
     }).sort({ createdAt: -1 }).limit(3);
-    
+
     res.render('pages/landing', {
       title: 'Welcome to EduControl NG',
       school: school,
@@ -73,16 +73,19 @@ router.post('/login', async (req, res) => {
 
       console.log('Attempting student login with:', loginIdentifier, '| phone variants:', uniquePhoneVariants);
 
-      const student = await Student.findOne({
+      // Siblings may share the same parent phone/email, so multiple students can
+      // match the identifier. Fetch all matches and pick the one whose password
+      // is correct so each student can log in independently.
+      const students = await Student.find({
         campus: selectedCampus,
         $or: [
           { parentPhone: { $in: uniquePhoneVariants } },
-          { parentEmail: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
+          { parentEmail: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } },
           { studentID: loginIdentifier }
         ]
       });
 
-      if (!student) {
+      if (!students || students.length === 0) {
         console.log('Student login failed: Student not found');
         return res.render('pages/login', {
           title: 'Login - EduControl NG',
@@ -90,18 +93,24 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      console.log('Student found:', { id: student.studentID, name: student.fullName, isActive: student.isActive });
+      let student = null;
+      for (const candidate of students) {
+        const ok = await candidate.comparePassword(password);
+        if (ok) {
+          student = candidate;
+          break;
+        }
+      }
 
-      const isValidPassword = await student.comparePassword(password);
-      console.log('Password validation result:', isValidPassword);
-
-      if (!isValidPassword) {
-        console.log('Student login failed: Invalid password');
+      if (!student) {
+        console.log('Student login failed: Invalid password for', students.length, 'matching record(s)');
         return res.render('pages/login', {
           title: 'Login - EduControl NG',
           error: 'Invalid parent phone/email or password'
         });
       }
+
+      console.log('Student found:', { id: student.studentID, name: student.fullName, isActive: student.isActive });
 
       if (!student.isActive) {
         console.log('Student login failed: Account deactivated');

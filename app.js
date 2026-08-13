@@ -61,8 +61,14 @@ app.use(async (req, res, next) => {
   res.locals.currentPath = req.path;
   // Campus lives on req.session.user.campus (set at login); mirror it to req.session.campus
   // for convenience and so unauthenticated routes fall back to a default.
-  req.session.campus = (req.session.user && req.session.user.campus) || req.session.campus || null;
-  res.locals.campus = req.session.campus || null;
+  // Only write to the session when the value actually changes, otherwise every
+  // request triggers a session save to MongoDB which can exhaust the connection
+  // pool under load and cause pages to hang indefinitely.
+  const campus = (req.session.user && req.session.user.campus) || req.session.campus || null;
+  res.locals.campus = campus;
+  if (req.session.campus !== campus) {
+    req.session.campus = campus;
+  }
 
   try {
     const School = require('./models/School');
