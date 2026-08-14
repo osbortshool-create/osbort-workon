@@ -81,7 +81,7 @@ router.post('/login', async (req, res) => {
         $or: [
           { parentPhone: { $in: uniquePhoneVariants } },
           { parentEmail: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } },
-          { studentID: loginIdentifier }
+          { studentID: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } }
         ]
       });
 
