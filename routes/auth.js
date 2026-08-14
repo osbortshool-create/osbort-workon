@@ -5,6 +5,8 @@ const Student = require('../models/Student');
 const School = require('../models/School');
 const Announcement = require('../models/Announcement');
 
+
+
 // Landing Page
 router.get('/', async (req, res) => {
   try {
