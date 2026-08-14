@@ -104,6 +104,10 @@ router.post('/login', async (req, res) => {
 
       if (!student) {
         console.log('Student login failed: Invalid password for', students.length, 'matching record(s)');
+        try {
+          const debugCandidates = students.map(s => ({ studentID: s.studentID, parentPhone: s.parentPhone, parentEmail: s.parentEmail, hasHash: typeof s.password === 'string' && s.password.startsWith('$2') }));
+          console.log('Student login candidates (for debugging):', JSON.stringify(debugCandidates));
+        } catch (e) { /* ignore logging errors */ }
         return res.render('pages/login', {
           title: 'Login - EduControl NG',
           error: 'Invalid parent phone/email or password'
