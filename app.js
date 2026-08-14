@@ -59,22 +59,34 @@ app.use(session({
 app.use(async (req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.currentPath = req.path;
-  // Campus lives on req.session.user.campus (set at login); mirror it to req.session.campus
-  // for convenience and so unauthenticated routes fall back to a default.
-  // Only write to the session when the value actually changes, otherwise every
-  // request triggers a session save to MongoDB which can exhaust the connection
-  // pool under load and cause pages to hang indefinitely.
-  const campus = (req.session.user && req.session.user.campus) || req.session.campus || null;
+  // Campus lives on req.session.user.campus (set at login); mirror it to
+  // res.locals.campus for templates. IMPORTANT: avoid writing to the session
+  // for unauthenticated/public requests because that causes session saves
+  // on every request and can exhaust the MongoDB connection pool, causing
+  // pages (notably in some browsers) to hang while the store is busy.
+  const campusFromUser = (req.session.user && req.session.user.campus) || null;
+  const campus = campusFromUser || req.session.campus || null;
   res.locals.campus = campus;
-  if (req.session.campus !== campus) {
+  // Only persist the campus into the session when a user is authenticated
+  // (this prevents unnecessary session writes for public pages).
+  if (req.session.user && req.session.campus !== campus) {
     req.session.campus = campus;
   }
 
   try {
-    const School = require('./models/School');
-    const schoolDoc = await School.findOne({ campus: req.session.campus || 'Lagos' }) || await School.findOne({ campus: 'Lagos' }) || await School.findOne({}) || null;
-    res.locals.school = schoolDoc;
-    res.locals.schoolLogo = schoolDoc && schoolDoc.logo ? schoolDoc.logo : '/images/default-logo.png';
+    // Only load school info for HTML pages to avoid extra DB work for asset/API
+    // requests. This keeps the middleware light and reduces the chance of
+    // request slowdowns that can look like a browser hang.
+    const acceptsHtml = req.headers && String(req.headers.accept || '').includes('text/html');
+    if (acceptsHtml) {
+      const School = require('./models/School');
+      const schoolDoc = await School.findOne({ campus: req.session.campus || 'Lagos' }) || await School.findOne({ campus: 'Lagos' }) || await School.findOne({}) || null;
+      res.locals.school = schoolDoc;
+      res.locals.schoolLogo = schoolDoc && schoolDoc.logo ? schoolDoc.logo : '/images/default-logo.png';
+    } else {
+      res.locals.school = null;
+      res.locals.schoolLogo = '/images/default-logo.png';
+    }
   } catch (error) {
     console.error('Error loading school for header:', error.message);
     res.locals.school = null;
