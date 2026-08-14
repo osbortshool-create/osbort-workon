@@ -92,7 +92,21 @@ studentSchema.pre('updateOne', async function (next) {
 });
 
 studentSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  if (!this.password) return false;
+
+  // Detect bcrypt hash (starts with $2a$/$2b$/$2y$) and use bcrypt.compare
+  if (typeof this.password === 'string' && this.password.startsWith('$2')) {
+    try {
+      return await bcrypt.compare(candidatePassword, this.password);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Fallback: some legacy records may store plaintext passwords.
+  // Compare directly (kept only for compatibility; new/updated records
+  // will be hashed by the pre-save hook).
+  return candidatePassword === this.password;
 };
 
 studentSchema.statics.ensureMissingStudentIds = async function (campus = null) {
