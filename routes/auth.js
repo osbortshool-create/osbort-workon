@@ -76,7 +76,7 @@ router.post('/login', async (req, res) => {
       // Siblings may share the same parent phone/email, so multiple students can
       // match the identifier. Fetch all matches and pick the one whose password
       // is correct so each student can log in independently.
-      const students = await Student.find({
+      let students = await Student.find({
         campus: selectedCampus,
         $or: [
           { parentPhone: { $in: uniquePhoneVariants } },
@@ -85,8 +85,21 @@ router.post('/login', async (req, res) => {
         ]
       });
 
+      // If no students found in the selected campus, try across all campuses
+      // to handle records with inconsistent campus values.
       if (!students || students.length === 0) {
-        console.log('Student login failed: Student not found');
+        console.log('No matching student in selected campus, trying across all campuses');
+        students = await Student.find({
+          $or: [
+            { parentPhone: { $in: uniquePhoneVariants } },
+            { parentEmail: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } },
+            { studentID: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } }
+          ]
+        });
+      }
+
+      if (!students || students.length === 0) {
+        console.log('Student login failed: Student not found for identifier:', loginIdentifier);
         return res.render('pages/login', {
           title: 'Login - EduControl NG',
           error: 'Invalid parent phone/email or password'
