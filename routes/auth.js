@@ -5,8 +5,6 @@ const Student = require('../models/Student');
 const School = require('../models/School');
 const Announcement = require('../models/Announcement');
 
-
-
 // Landing Page
 router.get('/', async (req, res) => {
   try {
@@ -78,30 +76,17 @@ router.post('/login', async (req, res) => {
       // Siblings may share the same parent phone/email, so multiple students can
       // match the identifier. Fetch all matches and pick the one whose password
       // is correct so each student can log in independently.
-      let students = await Student.find({
+      const students = await Student.find({
         campus: selectedCampus,
         $or: [
           { parentPhone: { $in: uniquePhoneVariants } },
           { parentEmail: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } },
-          { studentID: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } }
+          { studentID: loginIdentifier }
         ]
       });
 
-      // If no students found in the selected campus, try across all campuses
-      // to handle records with inconsistent campus values.
       if (!students || students.length === 0) {
-        console.log('No matching student in selected campus, trying across all campuses');
-        students = await Student.find({
-          $or: [
-            { parentPhone: { $in: uniquePhoneVariants } },
-            { parentEmail: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } },
-            { studentID: { $regex: new RegExp('^' + escapedEmail + '$', 'i') } }
-          ]
-        });
-      }
-
-      if (!students || students.length === 0) {
-        console.log('Student login failed: Student not found for identifier:', loginIdentifier);
+        console.log('Student login failed: Student not found');
         return res.render('pages/login', {
           title: 'Login - EduControl NG',
           error: 'Invalid parent phone/email or password'
@@ -119,10 +104,6 @@ router.post('/login', async (req, res) => {
 
       if (!student) {
         console.log('Student login failed: Invalid password for', students.length, 'matching record(s)');
-        try {
-          const debugCandidates = students.map(s => ({ studentID: s.studentID, parentPhone: s.parentPhone, parentEmail: s.parentEmail, hasHash: typeof s.password === 'string' && s.password.startsWith('$2') }));
-          console.log('Student login candidates (for debugging):', JSON.stringify(debugCandidates));
-        } catch (e) { /* ignore logging errors */ }
         return res.render('pages/login', {
           title: 'Login - EduControl NG',
           error: 'Invalid parent phone/email or password'
