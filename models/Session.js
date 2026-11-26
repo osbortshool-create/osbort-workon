@@ -33,14 +33,24 @@ sessionSchema.methods.updateCurrentTermBasedOnDate = async function () {
   if (this.isModified()) await this.save();
 };
 
+sessionSchema.statics.activateSession = async function (sessionId, campus) {
+  const session = await this.findOne({ _id: sessionId, campus });
+  if (!session) return null;
+
+  await this.updateMany(
+    { campus, isActive: true, _id: { $ne: session._id } },
+    { $set: { isActive: false } }
+  );
+
+  session.isActive = true;
+  await session.save();
+  return session;
+};
+
 sessionSchema.statics.getActiveSession = async function (campus) {
   const filter = { isActive: true };
   if (campus) filter.campus = campus;
-  let session = await this.findOne(filter);
-  if (!session && campus) {
-    session = await this.findOne({ isActive: true });
-  }
-  return session;
+  return this.findOne(filter);
 };
 
 module.exports = mongoose.model('Session', sessionSchema);
