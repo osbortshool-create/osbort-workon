@@ -167,7 +167,18 @@ router.get('/students', async (req, res) => {
     
     const filter = { isActive: true }; // Only show active students
     if (req.query.class) filter.currentClass = req.query.class;
-    if (req.query.session) filter.currentSession = req.query.session;
+
+    const activeSession = await Session.getActiveSession(req.session.campus);
+    if (activeSession) {
+      await Student.updateMany(
+        { campus: req.session.campus, isActive: true },
+        { $set: { currentSession: activeSession.sessionName } }
+      );
+    }
+
+    const selectedSession = req.query.session || (activeSession ? activeSession.sessionName : '');
+    if (selectedSession) filter.currentSession = selectedSession;
+
     filter.campus = req.session.campus;
     if (req.query.search) {
       filter.$or = [
@@ -192,6 +203,8 @@ router.get('/students', async (req, res) => {
       students,
       classes,
       sessions,
+      activeSession,
+      selectedSession,
       currentPage: page,
       totalPages,
       query: req.query
