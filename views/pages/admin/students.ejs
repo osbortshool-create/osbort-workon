@@ -41,7 +41,7 @@
                 <select name="session">
                     <option value="">All Sessions</option>
                     <% sessions.forEach(session => { %>
-                        <option value="<%= session.sessionName %>" <%= locals.query && query.session === session.sessionName ? 'selected' : '' %>>
+                        <option value="<%= session.sessionName %>" <%= selectedSession === session.sessionName ? 'selected' : '' %>>
                             <%= session.sessionName %>
                         </option>
                     <% }) %>
