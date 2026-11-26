@@ -1006,11 +1006,31 @@ router.post('/sessions/delete/:id', async (req, res) => {
 // Set Active Session
 router.post('/sessions/activate/:id', async (req, res) => {
   try {
-    await Session.findByIdAndUpdate(req.params.id, { isActive: true });
+    const session = await Session.activateSession(req.params.id, req.session.campus);
+    if (!session) {
+      return res.redirect('/admin/sessions?error=Session not found');
+    }
     res.redirect('/admin/sessions?success=Session activated successfully');
   } catch (error) {
     console.error('Error activating session:', error);
     res.redirect('/admin/sessions?error=Failed to activate session');
+  }
+});
+
+// Deactivate Session
+router.post('/sessions/deactivate/:id', async (req, res) => {
+  try {
+    const session = await Session.findOne({ _id: req.params.id, campus: req.session.campus });
+    if (!session) {
+      return res.redirect('/admin/sessions?error=Session not found');
+    }
+
+    session.isActive = false;
+    await session.save();
+    res.redirect('/admin/sessions?success=Session deactivated successfully');
+  } catch (error) {
+    console.error('Error deactivating session:', error);
+    res.redirect('/admin/sessions?error=Failed to deactivate session');
   }
 });
 
