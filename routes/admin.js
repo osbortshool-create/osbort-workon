@@ -908,6 +908,14 @@ router.get('/sessions', async (req, res) => {
   try {
     const sessions = await Session.find({ campus: req.session.campus }).sort({ sessionName: -1 });
 
+    const activeSession = sessions.find(session => session.isActive);
+    if (activeSession) {
+      await Student.updateMany(
+        { campus: req.session.campus, isActive: true },
+        { $set: { currentSession: activeSession.sessionName } }
+      );
+    }
+
     // Ensure term status is consistent with current date
     await Promise.all(sessions.map(async (session) => {
       await session.updateCurrentTermBasedOnDate();
@@ -1010,7 +1018,13 @@ router.post('/sessions/activate/:id', async (req, res) => {
     if (!session) {
       return res.redirect('/admin/sessions?error=Session not found');
     }
-    res.redirect('/admin/sessions?success=Session activated successfully');
+
+    await Student.updateMany(
+      { campus: req.session.campus, isActive: true },
+      { $set: { currentSession: session.sessionName } }
+    );
+
+    res.redirect('/admin/sessions?success=Session activated successfully and students moved to the new session');
   } catch (error) {
     console.error('Error activating session:', error);
     res.redirect('/admin/sessions?error=Failed to activate session');
