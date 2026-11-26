@@ -90,9 +90,15 @@
                                 </div>
                             </td>
                             <td class="actions">
-                                <% if (!session.isActive) { %>
+                                <% if (session.isActive) { %>
+                                    <form method="POST" action="/admin/sessions/deactivate/<%= session._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to deactivate this session?')">
+                                        <button type="submit" class="btn btn-sm btn-warning" title="Deactivate session">
+                                            <i class="fas fa-stop"></i>
+                                        </button>
+                                    </form>
+                                <% } else { %>
                                     <form method="POST" action="/admin/sessions/activate/<%= session._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to activate this session? This will deactivate the current active session.')">
-                                        <button type="submit" class="btn btn-sm btn-success">
+                                        <button type="submit" class="btn btn-sm btn-success" title="Activate session">
                                             <i class="fas fa-play"></i>
                                         </button>
                                     </form>
